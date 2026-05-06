@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+data/vp_verify_cache.db
+vp_resolver_clean_notebook.py
