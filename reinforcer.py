@@ -24,6 +24,8 @@ class DuplicateSeedError(ValueError):
 _RE_MONTH_LOWER = re.compile(r'(\w+)\s*>=\s*CurrentMonth-(\d+)MONTHS')
 _RE_MONTH_EQ    = re.compile(r'(\w+)\s*=\s*CurrentMonth-(\d+)MONTHS')
 _RE_MONTH_UPPER = re.compile(r'\w+\s*<\s*CurrentMonth\b')
+_RE_WEEK_LOWER  = re.compile(r'(\w+)\s*>=\s*CurrentWeek-(\d+)WEEKS')
+_RE_WEEK_UPPER  = re.compile(r'\w+\s*<\s*CurrentWeek\b')
 _RE_TIME_LOWER  = re.compile(r'(\w+)\s*>=\s*CurrentTime-(\d+)(DAYS|WEEKS)')
 
 # Formula patterns (must be checked before SUM to avoid false match)
@@ -47,7 +49,7 @@ _RE_IN_LIST = re.compile(r'(\w+)\s+IN\s+LIST\s*\(([^)]+)\)')
 _RE_AON     = re.compile(r'AON\s*>\s*(\d+)')
 
 # Attribute equality (negative lookahead avoids time-anchor values)
-_RE_ATTR_EQ = re.compile(r'(\w+)\s*=\s*(?!CurrentMonth|CurrentTime)(\S+)')
+_RE_ATTR_EQ = re.compile(r'(\w+)\s*=\s*(?!CurrentMonth|CurrentWeek|CurrentTime)(\S+)')
 
 
 # ── Core parser ────────────────────────────────────────────────────────────────
@@ -62,7 +64,7 @@ def parse_parent_condition(condition_str: str) -> dict:
     """
     parsed = {
         # Time window
-        "time_anchor":        None,   # "CurrentMonth" | "CurrentTime"
+        "time_anchor":        None,   # "CurrentMonth" | "CurrentWeek" | "CurrentTime"
         "time_unit":          None,   # "MONTHS" | "DAYS" | "WEEKS"
         "time_n":             None,   # int
         "time_col":           None,   # str
@@ -158,6 +160,18 @@ def parse_parent_condition(condition_str: str) -> dict:
             used_cols.add(m.group(1))
 
     if _RE_MONTH_UPPER.search(condition_str):
+        parsed["has_upper_bound"] = True
+
+    if not parsed["time_col"]:
+        m = _RE_WEEK_LOWER.search(condition_str)
+        if m:
+            parsed["time_col"]    = m.group(1)
+            parsed["time_n"]      = int(m.group(2))
+            parsed["time_anchor"] = "CurrentWeek"
+            parsed["time_unit"]   = "WEEKS"
+            used_cols.add(m.group(1))
+
+    if _RE_WEEK_UPPER.search(condition_str):
         parsed["has_upper_bound"] = True
 
     if not parsed["time_col"]:
@@ -323,6 +337,11 @@ def derive_selection_signature(parsed: dict, original_input: str) -> dict:
     fixed_comps = (
         ["COUNT_ALL({count_col}) > 0"] if parsed["has_count_presence"] else []
     )
+    is_parameterized = (
+        "${" in original_input
+        or "{X}" in original_input
+        or re.search(r"\bX\s+(?:days|weeks|months)\b", original_input, flags=re.IGNORECASE) is not None
+    )
 
     return {
         "seed_type": "aggregation",
@@ -351,7 +370,7 @@ def derive_selection_signature(parsed: dict, original_input: str) -> dict:
         "groupby":  {"required": parsed["groupby_col"] is not None},
         "join":     {"required": False},
         "filters":  {"requires_internal_filter": len(parsed["attribute_filters"]) > 0},
-        "runtime":  {"is_parameterized": True},
+        "runtime":  {"is_parameterized": is_parameterized},
         "composition": {
             "can_be_main_condition":   True,
             "composable_with_filters": True,
