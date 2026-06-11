@@ -1,11 +1,13 @@
 import json
+from json import JSONDecodeError
 
 from langsmith import traceable
 
-from config import client, MODEL
+from config import client, MODEL, chat_completion_options
 
 decomposition_schema = {
     "name": "vp_decomposition",
+    "strict": True,
     "schema": {
         "type": "object",
         "additionalProperties": False,
@@ -171,7 +173,14 @@ Important rules:
 - "iPhone users" is an attribute_filter, not part of the KPI.
 - "last 3 months" is a time_window.
 - "active for more than 35 days" is a duration_threshold.
+- For normal rolling day/week windows like "last 90 days", "past 30 days",
+  "over the last 2 weeks", set is_completed_period=false. Set it true only
+  when the user explicitly says completed, previous complete, excluding today,
+  excluding current day/week, or similar cutoff language.
 - "average revenue" may be aggregation with agg_hint AVG unless it clearly describes a formula.
+- For percentage formulas shaped like "N% of <metric phrase>", set kpi_text to
+  the metric phrase after "of". Do not include comparison or threshold words in
+  kpi_text.
 - "number of customers" or "number of transactions" usually means COUNT_ALL.
 - "total" usually means SUM.
 - "maximum" usually means MAX.
@@ -239,24 +248,126 @@ Implicit aggregation inference:
     kpi_text: "customers"
   Rationale: VP rule engine requires an aggregation; pure attribute filters imply a
   filtered customer presence check.
+
+Output shape:
+- Return a single JSON object with keys original_input and clauses.
+- Do not return a top-level array.
 """
+
+
+class DecompositionError(ValueError):
+    pass
+
+
+def parse_decomposition_content(content: str, user_input: str) -> dict:
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("LLM decomposition response content is empty.")
+
+    parsed = json.loads(content)
+
+    if isinstance(parsed, list):
+        parsed = {
+            "original_input": user_input,
+            "clauses": parsed,
+        }
+
+    if not isinstance(parsed, dict):
+        raise ValueError(
+            "LLM decomposition must be a JSON object with 'original_input' and "
+            f"'clauses'; got {type(parsed).__name__}."
+        )
+
+    if "clauses" not in parsed:
+        raise ValueError("LLM decomposition response is missing required key 'clauses'.")
+
+    if not isinstance(parsed["clauses"], list):
+        raise ValueError(
+            "LLM decomposition field 'clauses' must be a list; "
+            f"got {type(parsed['clauses']).__name__}."
+        )
+
+    for index, clause in enumerate(parsed["clauses"]):
+        if not isinstance(clause, dict):
+            raise ValueError(
+                "LLM decomposition clauses must be JSON objects; "
+                f"clause at index {index} is {type(clause).__name__}."
+            )
+
+    if not isinstance(parsed.get("original_input"), str):
+        parsed["original_input"] = user_input
+
+    return parsed
+
+
+def _decomposition_response_format() -> dict:
+    return {
+        "type": "json_schema",
+        "json_schema": decomposition_schema
+    }
+
+
+def _create_decomposition(messages: list[dict]) -> str:
+    response = client.chat.completions.create(
+        model=MODEL,
+        temperature=0,
+        **chat_completion_options(),
+        messages=messages,
+        response_format=_decomposition_response_format()
+    )
+    return response.choices[0].message.content
+
+
+def _preview_content(content: str, limit: int = 800) -> str:
+    content = content or ""
+    return content[:limit] + ("..." if len(content) > limit else "")
+
+
+def _parse_or_repair_decomposition(messages: list[dict], user_input: str) -> dict:
+    errors = []
+    content = ""
+
+    for attempt in range(2):
+        try:
+            content = _create_decomposition(messages)
+        except Exception as exc:
+            raise DecompositionError(f"LLM decomposition request failed: {exc}") from exc
+
+        try:
+            return parse_decomposition_content(content, user_input)
+        except (JSONDecodeError, ValueError) as exc:
+            errors.append(f"attempt {attempt + 1}: {exc}")
+
+            if attempt == 1:
+                break
+
+            messages = messages + [
+                {
+                    "role": "user",
+                    "content": (
+                        "Your previous response was not valid JSON for the required schema. "
+                        "Return ONLY one complete, parseable JSON object with keys "
+                        "'original_input' and 'clauses'. Do not include markdown, prose, "
+                        "or a top-level array. Make sure every string is properly closed "
+                        "and escaped.\n\n"
+                        "Invalid response preview:\n"
+                        f"{_preview_content(content)}"
+                    ),
+                }
+            ]
+
+    raise DecompositionError(
+        "Failed to parse LLM decomposition after repair retry. "
+        + " | ".join(errors)
+        + f" | last response preview: {_preview_content(content)}"
+    )
 
 
 @traceable(run_type="llm", name="decompose_vp_input", metadata={"model": MODEL})
 def decompose_vp_input(user_input: str) -> dict:
-    response = client.chat.completions.create(
-        model=MODEL,
-        temperature=0,
-        reasoning_effort="low",
+    return _parse_or_repair_decomposition(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_input}
         ],
-        response_format={
-            "type": "json_schema",
-            "json_schema": decomposition_schema
-        }
+        user_input=user_input,
     )
-
-    content = response.choices[0].message.content
-    return json.loads(content)

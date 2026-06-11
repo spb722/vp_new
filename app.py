@@ -8,6 +8,7 @@ import graph
 import pipeline
 from reinforcer import DuplicateSeedError
 from seeds import load_seeds
+from vp_logging import print_vp_resolve_log
 
 importlib.reload(graph)
 
@@ -46,12 +47,21 @@ def health():
 @app.post("/resolve")
 def resolve(req: ResolveRequest):
     result = graph.run_vp_graph(req.input, client_name=req.client_name)
+    print_vp_resolve_log(req, result)
+    top_candidates = [
+        {
+            "seed_id": candidate.get("seed_id"),
+            "score": candidate.get("score"),
+            "warnings": candidate.get("warnings", []),
+        }
+        for candidate in result.get("top_candidates", [])
+    ]
     return {
         "ok": result.get("ok", False),
         "parent_condition": result.get("final_parent_condition"),
         "error": result.get("error"),
         "selected_seed_id": result.get("selected_seed_id"),
-        "top_candidates": result.get("top_candidates", []),
+        "top_candidates": top_candidates,
         "trajectory": result.get("trajectory", []),
     }
 

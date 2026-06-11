@@ -36,7 +36,6 @@ _condition
 State checkpointing: compile with InMemorySaver() for durable execution.
 """
 
-import json
 import re
 from typing import Optional
 from typing_extensions import TypedDict
@@ -47,12 +46,17 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 
-from config import client, MODEL
-from decomposer import decompose_vp_input, SYSTEM_PROMPT, decomposition_schema
+from config import MODEL
+from decomposer import (
+    DecompositionError,
+    decompose_vp_input,
+    _parse_or_repair_decomposition,
+    SYSTEM_PROMPT,
+)
 from features import build_seed_features
 from seeds import load_seeds
 from selector import select_seed_candidates_strict, choose_seed_or_report_ambiguity
-from api_client import resolve_kpi_from_api
+from api_client import get_vp_verify_trace, resolve_kpi_from_api, start_vp_verify_trace
 from renderer import render_seed_template, render_filters
 
 
@@ -90,6 +94,7 @@ class VPState(TypedDict):
 
     # Node 5: validate_output
     validation_result: Optional[dict]
+    parse_ok: Optional[bool]
 
     # Feedback loop
     retry_count: int               # how many retries have happened so far
@@ -116,10 +121,7 @@ def _decompose_with_retry(user_input: str, last_error: str) -> dict:
                Please fix the count_constraint values to include
                both the counted item AND the number."
     """
-    response = client.chat.completions.create(
-        model=MODEL,
-        temperature=0,
-        reasoning_effort="low",
+    return _parse_or_repair_decomposition(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": user_input},
@@ -136,12 +138,8 @@ def _decompose_with_retry(user_input: str, last_error: str) -> dict:
                 ),
             },
         ],
-        response_format={
-            "type": "json_schema",
-            "json_schema": decomposition_schema,
-        },
+        user_input=user_input,
     )
-    return json.loads(response.choices[0].message.content)
 
 
 # ── Node 1: parse_request ──────────────────────────────────────────────────
@@ -158,19 +156,29 @@ def parse_request(state: VPState) -> dict:
     last_error = state.get("last_error")
     retry_count = state.get("retry_count", 0)
 
-    if last_error:
-        retry_count += 1
-        decomp = _decompose_with_retry(state["user_input"], last_error)
-        label = f"parse_request(retry={retry_count})"
-    else:
-        decomp = decompose_vp_input(state["user_input"])
-        label = "parse_request"
+    try:
+        if last_error:
+            retry_count += 1
+            decomp = _decompose_with_retry(state["user_input"], last_error)
+            label = f"parse_request(retry={retry_count})"
+        else:
+            decomp = decompose_vp_input(state["user_input"])
+            label = "parse_request"
+    except DecompositionError as exc:
+        return {
+            "decomposition": None,
+            "features": None,
+            "parse_ok": False,
+            "error": f"Decomposition failed: {exc}",
+            "trajectory": state.get("trajectory", []) + ["parse_request:failed"],
+        }
 
     features = build_seed_features(decomp)
 
     return {
         "decomposition": decomp,
         "features": features,
+        "parse_ok": True,
         "retry_count": retry_count,
         "render_failed": False,
 
@@ -247,34 +255,54 @@ def resolve_columns(state: VPState) -> dict:
             }
         else:
             kpi_mapping = resolve_kpi_from_api(features["kpi_text"])
-
-        if not kpi_mapping["matched"]:
-            return {
-                "kpi_mapping": kpi_mapping,
-                "filter_conditions": [],
-                "columns_ok": False,
-                "columns_error": f"KPI not matched: {features['kpi_text']}",
-                "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_failed"],
-            }
-
-        filter_conditions = render_filters(features)
-
-        return {
-            "kpi_mapping": kpi_mapping,
-            "filter_conditions": filter_conditions,
-            "columns_ok": True,
-            "columns_error": None,
-            "trajectory": state.get("trajectory", []) + ["resolve_columns"],
-        }
-
     except Exception as exc:
+        kpi_text = (features or {}).get("kpi_text")
         return {
             "kpi_mapping": None,
             "filter_conditions": [],
             "columns_ok": False,
-            "columns_error": str(exc),
-            "trajectory": state.get("trajectory", []) + ["resolve_columns:exception"],
+            "columns_error": f"KPI resolution failed for kpi_text={kpi_text!r}: {exc}",
+            "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_exception"],
         }
+
+    if not kpi_mapping["matched"]:
+        return {
+            "kpi_mapping": kpi_mapping,
+            "filter_conditions": [],
+            "columns_ok": False,
+            "columns_error": f"KPI not matched: {features['kpi_text']}",
+            "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_failed"],
+        }
+
+    try:
+        filter_conditions = render_filters(features)
+    except Exception as exc:
+        filter_parts = []
+        for clause in (features or {}).get("attribute_filters") or []:
+            filter_parts.append(
+                f"attribute_filter text={clause.get('text')!r} values={clause.get('values')!r}"
+            )
+        for clause in (features or {}).get("duration_thresholds") or []:
+            filter_parts.append(
+                f"duration_threshold text={clause.get('text')!r} "
+                f"time={clause.get('time_n')!r} {clause.get('time_unit')!r}"
+            )
+        filter_context = "; ".join(filter_parts) or "no filters"
+        return {
+            "kpi_mapping": kpi_mapping,
+            "filter_conditions": [],
+            "columns_ok": False,
+            "columns_error": f"Filter resolution failed for {filter_context}: {exc}",
+            "trajectory": state.get("trajectory", []) + ["resolve_columns:filter_exception"],
+        }
+
+    return {
+        "kpi_mapping": kpi_mapping,
+        "filter_conditions": filter_conditions,
+        "columns_ok": True,
+        "columns_error": None,
+        "trajectory": state.get("trajectory", []) + ["resolve_columns"],
+    }
 
 
 # ── Node 4: render_condition ───────────────────────────────────────────────
@@ -368,7 +396,9 @@ def stop_failure(state: VPState) -> dict:
     validation = state.get("validation_result") or {}
     decision = state.get("seed_decision") or {}
 
-    if state.get("render_failed") and state.get("retry_count", 0) >= MAX_RETRIES:
+    if state.get("error"):
+        reason = state["error"]
+    elif state.get("render_failed") and state.get("retry_count", 0) >= MAX_RETRIES:
         reason = (
             f"Render failed after {MAX_RETRIES} retries. "
             f"Last error: {state.get('last_error')}"
@@ -417,6 +447,10 @@ def route_after_seed(state: VPState) -> str:
     }.get(status, "stop_failure")
 
 
+def route_after_parse(state: VPState) -> str:
+    return "select_seed" if state.get("parse_ok") else "stop_failure"
+
+
 def route_after_columns(state: VPState) -> str:
     return "render_condition" if state.get("columns_ok") else "stop_failure"
 
@@ -455,11 +489,18 @@ def build_vp_graph(checkpointer=None):
 
     # Fixed edges
     builder.add_edge(START,            "parse_request")
-    builder.add_edge("parse_request",  "select_seed")
     builder.add_edge("stop_failure",   END)
     builder.add_edge("request_client", "select_seed")
 
     # Conditional edges
+    builder.add_conditional_edges(
+        "parse_request", route_after_parse,
+        {
+            "select_seed": "select_seed",
+            "stop_failure": "stop_failure",
+        },
+    )
+
     builder.add_conditional_edges(
         "select_seed", route_after_seed,
         {
@@ -532,6 +573,7 @@ def run_vp_graph(
         "rendered_seed_condition": None,
         "final_parent_condition":  None,
         "validation_result":       None,
+        "parse_ok":                None,
         "retry_count":             0,
         "last_error":              None,
         "render_failed":           False,
@@ -539,13 +581,19 @@ def run_vp_graph(
         "error":                   None,
     }
 
+    start_vp_verify_trace()
     config = {"configurable": {"thread_id": thread_id}} if thread_id else {}
     s = graph.invoke(initial_state, config)
+    vp_verify_trace = get_vp_verify_trace()
 
     features       = s.get("features") or {}
     seed_decision  = s.get("seed_decision") or {}
     selected_seed  = s.get("selected_seed") or {}
     candidates     = s.get("seed_candidates") or []
+    selected_candidate = next(
+        (c for c in candidates if c.get("seed_id") == selected_seed.get("seed_id")),
+        {},
+    )
 
     return {
         "ok":                      (s.get("validation_result") or {}).get("valid", False),
@@ -561,6 +609,9 @@ def run_vp_graph(
             "time_unit":            features.get("time_unit"),
             "time_n":               features.get("time_n"),
             "is_completed_period":  features.get("is_completed_period"),
+            "month_window_style":   features.get("month_window_style"),
+            "month_window":         features.get("month_window"),
+            "month_window_classifier_error": features.get("month_window_classifier_error"),
             "is_parameterized":     features.get("is_parameterized"),
             "needs_groupby":        features.get("needs_groupby"),
             "has_formula":          features.get("has_formula"),
@@ -575,8 +626,23 @@ def run_vp_graph(
         "seed_decision_status":  seed_decision.get("status"),
         "seed_decision_message": seed_decision.get("message"),
         "selected_seed_id":      selected_seed.get("seed_id"),
+        "selected_seed": {
+            "seed_id": selected_seed.get("seed_id"),
+            "description": selected_seed.get("description"),
+            "template": selected_seed.get("output_template"),
+            "score": selected_candidate.get("score"),
+            "reasons": selected_candidate.get("reasons", []),
+            "warnings": selected_candidate.get("warnings", []),
+        } if selected_seed else None,
         "top_candidates": [
-            {"seed_id": c["seed_id"], "score": c["score"], "warnings": c["warnings"]}
+            {
+                "seed_id": c["seed_id"],
+                "description": c.get("description"),
+                "score": c["score"],
+                "template": c.get("template"),
+                "reasons": c.get("reasons", []),
+                "warnings": c["warnings"],
+            }
             for c in candidates[:3]
         ],
 
@@ -584,6 +650,7 @@ def run_vp_graph(
         "filter_conditions": s.get("filter_conditions"),
         "columns_ok":        s.get("columns_ok"),
         "columns_error":     s.get("columns_error"),
+        "vp_verify_trace":   vp_verify_trace,
 
         "rendered_seed_condition": s.get("rendered_seed_condition"),
         "validation_result":       s.get("validation_result"),

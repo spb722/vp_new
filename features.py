@@ -67,6 +67,175 @@ def extract_percentage_factor(text: str | None) -> float | None:
     return percentage / 100.0
 
 
+def extract_formula_kpi_text(text: str | None) -> str | None:
+    """
+    Extract the metric phrase from percentage formulas.
+
+    Generic shape:
+      "20% of <metric phrase> greater than ..."
+      "10 percent of <metric phrase> is less than ..."
+
+    The extractor intentionally does not know telecom KPI names. It only uses
+    formula/comparison grammar to recover the phrase that VP_verify should map.
+    """
+    if not text:
+        return None
+
+    normalized = re.sub(r"\s+", " ", text).strip()
+
+    match = re.search(
+        r"(?:\d+(?:\.\d+)?\s*%|\d+(?:\.\d+)?\s+percent)\s+of\s+(.+)$",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
+    if not match:
+        return None
+
+    metric = match.group(1).strip()
+
+    metric = re.sub(
+        r"\b("
+        r"is|are|was|were|being|be|"
+        r"greater\s+than|more\s+than|above|exceeds?|"
+        r"less\s+than|below|"
+        r"equal(?:s)?\s+to|equal(?:s)?|"
+        r"at\s+least|at\s+most|"
+        r"higher\s+than|lower\s+than"
+        r")\b.*$",
+        "",
+        metric,
+        flags=re.IGNORECASE,
+    ).strip()
+
+    metric = re.sub(
+        r"\b(specified|given|provided|selected|particular)\s+"
+        r"(threshold|value|amount)\b.*$",
+        "",
+        metric,
+        flags=re.IGNORECASE,
+    ).strip()
+
+    metric = re.sub(r"^(their|the|a|an)\s+", "", metric, flags=re.IGNORECASE)
+    metric = re.sub(r"\s+", " ", metric).strip(" .,:;")
+
+    return metric or None
+
+
+COMPARISON_INTENT_PATTERN = re.compile(
+    r"\b("
+    r"greater\s+than|more\s+than|above|exceeds?|"
+    r"less\s+than|below|"
+    r"equal(?:s)?\s+to|equal(?:s)?|"
+    r"at\s+least|at\s+most|"
+    r"higher\s+than|lower\s+than|"
+    r"threshold|specified\s+value|given\s+value|provided\s+value"
+    r")\b",
+    flags=re.IGNORECASE,
+)
+
+
+VAGUE_FORMULA_KPI_TEXTS = {
+    "value",
+    "amount",
+    "metric",
+    "kpi",
+    "it",
+    "this",
+    "that",
+}
+
+
+GENERIC_SUBJECT_FILTERS = {
+    "customer",
+    "customers",
+    "subscriber",
+    "subscribers",
+    "user",
+    "users",
+    "account",
+    "accounts",
+}
+
+
+def clause_has_condition_intent(clause: dict | None) -> bool:
+    if not clause:
+        return False
+
+    if clause.get("operator_hint") in {">", "<", ">=", "<=", "=", "!="}:
+        return True
+
+    text = " ".join(
+        str(part)
+        for part in [
+            clause.get("text"),
+            clause.get("kpi_text"),
+            clause.get("notes"),
+        ]
+        if part
+    )
+
+    return COMPARISON_INTENT_PATTERN.search(text) is not None
+
+
+def is_vague_formula_kpi_text(text: str | None) -> bool:
+    if not text:
+        return True
+
+    cleaned = clean_for_api(text)
+    return cleaned in VAGUE_FORMULA_KPI_TEXTS
+
+
+def get_clause_kpi_text(clause: dict | None) -> str | None:
+    if not clause:
+        return None
+
+    return clause.get("kpi_text_clean") or clause.get("kpi_text")
+
+
+def is_generic_subject_filter(clause: dict) -> bool:
+    if clause.get("values"):
+        return False
+
+    text = clean_for_api(clause.get("text"))
+    return text in GENERIC_SUBJECT_FILTERS
+
+
+def remove_generic_subject_filters(attribute_filters: list) -> list:
+    return [
+        clause for clause in attribute_filters
+        if not is_generic_subject_filter(clause)
+    ]
+
+
+def classify_month_window_for_features(original_input: str, decomposition: dict) -> dict:
+    try:
+        from month_classifier import classify_month_window
+
+        return classify_month_window(original_input, decomposition)
+    except Exception as exc:
+        return {
+            "has_month_window": True,
+            "style": "unknown",
+            "time_n": None,
+            "confidence": "low",
+            "reason": f"classifier_failed: {exc}",
+        }
+
+
+def has_month_window_text(original_input: str, time_clause: dict | None) -> bool:
+    text = " ".join(
+        part
+        for part in [
+            original_input,
+            (time_clause or {}).get("text"),
+        ]
+        if isinstance(part, str)
+    )
+
+    return re.search(r"\bmonths?\b", text, flags=re.IGNORECASE) is not None
+
+
 def detect_groupby_text(original_input: str) -> str | None:
     """
     Detect group-by phrase.
@@ -404,17 +573,46 @@ def build_seed_features(result: dict) -> dict:
     time_clauses = get_clauses(result, "time_window")
     count_constraints = get_clauses(result, "count_constraint")
     attribute_filters = get_clauses(result, "attribute_filter")
+    attribute_filters = remove_generic_subject_filters(attribute_filters)
     duration_thresholds = get_clauses(result, "duration_threshold")
 
     # Pick main measurable clause
-    if aggregation_clauses:
+    aggregation_clause = aggregation_clauses[0] if aggregation_clauses else None
+    formula_clause = formula_clauses[0] if formula_clauses else None
+    formula_condition_clause = next(
+        (
+            clause for clause in formula_clauses
+            if extract_percentage_factor(clause.get("text") or clause.get("kpi_text"))
+            and clause_has_condition_intent(clause)
+        ),
+        None,
+    )
+    aggregation_has_condition = clause_has_condition_intent(aggregation_clause)
+
+    if formula_condition_clause and not aggregation_has_condition:
+        main_clause = formula_condition_clause
+        agg_type = "FORMULA"
+        formula_kpi_text = get_clause_kpi_text(main_clause)
+        extracted_kpi_text = extract_formula_kpi_text(main_clause.get("text"))
+
+        if is_vague_formula_kpi_text(formula_kpi_text):
+            formula_kpi_text = None
+        if is_vague_formula_kpi_text(extracted_kpi_text):
+            extracted_kpi_text = None
+
+        kpi_text = (
+            formula_kpi_text
+            or extracted_kpi_text
+            or get_clause_kpi_text(aggregation_clause)
+        )
+    elif aggregation_clauses:
         main_clause = aggregation_clauses[0]
         agg_type = main_clause.get("agg_hint") or "UNKNOWN"
-        kpi_text = main_clause.get("kpi_text_clean") or main_clause.get("kpi_text")
+        kpi_text = get_clause_kpi_text(main_clause)
     elif formula_clauses:
-        main_clause = formula_clauses[0]
+        main_clause = formula_clause
         agg_type = "FORMULA"
-        kpi_text = main_clause.get("kpi_text")
+        kpi_text = get_clause_kpi_text(main_clause)
     else:
         main_clause = None
         agg_type = None
@@ -431,6 +629,9 @@ def build_seed_features(result: dict) -> dict:
         time_unit = None
         time_n = None
         is_completed_period = False
+    month_window = None
+    month_window_style = None
+    month_window_classifier_error = None
 
     # Parameterized detection
     is_parameterized = (
@@ -447,7 +648,7 @@ def build_seed_features(result: dict) -> dict:
 
     # Formula detection
     formula_type = None
-    has_formula = bool(formula_clauses) or agg_type == "FORMULA"
+    has_formula = agg_type == "FORMULA"
 
     # AVG over time should become virtual formula
     if agg_type == "AVG" and time_unit is not None:
@@ -457,7 +658,15 @@ def build_seed_features(result: dict) -> dict:
         kpi_text = clean_average_kpi_text(kpi_text)
 
     # Percentage formula
-    percentage_factor = extract_percentage_factor(kpi_text or original_input)
+    main_clause_text = (main_clause or {}).get("text") if main_clause else None
+    percentage_factor = (
+        extract_percentage_factor(main_clause_text)
+        or extract_percentage_factor(kpi_text)
+        or extract_percentage_factor(original_input)
+    )
+    if agg_type == "FORMULA" and not kpi_text and percentage_factor is not None:
+        kpi_text = extract_formula_kpi_text(main_clause_text) or extract_formula_kpi_text(original_input)
+
     if agg_type == "FORMULA" and percentage_factor is not None:
         has_formula = True
         formula_type = "percentage_of_kpi"
@@ -530,10 +739,19 @@ def build_seed_features(result: dict) -> dict:
         agg_type = "COUNT_ALL"
         kpi_text = "product id"
 
-        # Product examples often say "last month" but expected engine style is 30 DAYS
-        if time_unit == "MONTHS" and time_n == 1 and "last month" in original_input.lower():
-            time_unit = "DAYS"
-            time_n = 30
+        if time_unit == "MONTHS" or has_month_window_text(original_input, time_clause):
+            month_window = classify_month_window_for_features(original_input, result)
+            month_window_style = month_window.get("style")
+
+            classifier_time_n = month_window.get("time_n")
+            if isinstance(classifier_time_n, int):
+                time_n = classifier_time_n
+
+            if month_window.get("has_month_window") and month_window_style not in ("none", "unknown"):
+                time_unit = "MONTHS"
+
+            if month_window_style == "unknown":
+                month_window_classifier_error = month_window.get("reason")
 
     # Remove campaign attribute filters if campaign_presence will handle them
     if campaign_presence:
@@ -561,6 +779,9 @@ def build_seed_features(result: dict) -> dict:
         "time_unit": time_unit,
         "time_n": time_n,
         "is_completed_period": is_completed_period,
+        "month_window_style": month_window_style,
+        "month_window": month_window,
+        "month_window_classifier_error": month_window_classifier_error,
 
         "is_parameterized": is_parameterized,
         "needs_groupby": needs_groupby,

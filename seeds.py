@@ -288,6 +288,70 @@ extra_seeds = [
     ),
 
     make_seed(
+        seed_id="S153_product_presence_month_exact",
+        description="Product presence for product list in a pinned previous month",
+        client="global",
+        output_template="{date_col} = CurrentMonth-{N}MONTHS AND {key_col} IN LIST ({list_values}) AND COUNT_ALL({key_col}) > 0",
+        agg_type="COUNT_ALL",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="exact",
+        requires_kpi_col=False,
+        requires_date_col=True,
+        requires_N=True,
+        fixed_comparisons=["COUNT_ALL({key_col}) > 0"],
+        reasoning="Used for product purchase/subscription presence in a specific pinned month, e.g. last month, two months ago, or the month that was N months ago."
+    ),
+
+    make_seed(
+        seed_id="S154_product_presence_month_bounded",
+        description="Product presence for product list across a bounded range of completed months",
+        client="global",
+        output_template="{date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth AND {key_col} IN LIST ({list_values}) AND COUNT_ALL({key_col}) > 0",
+        agg_type="COUNT_ALL",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="bounded",
+        requires_kpi_col=False,
+        requires_date_col=True,
+        requires_N=True,
+        fixed_comparisons=["COUNT_ALL({key_col}) > 0"],
+        reasoning="Used for product purchase/subscription presence across a closed range of completed months, e.g. across the last 3 months."
+    ),
+
+    make_seed(
+        seed_id="S155_product_presence_month_lmtd",
+        description="Product presence for product list from last month to date",
+        client="global",
+        output_template="{date_col} >= CurrentMonth-1MONTHS AND {key_col} IN LIST ({list_values}) AND COUNT_ALL({key_col}) > 0",
+        agg_type="COUNT_ALL",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="lmtd",
+        requires_kpi_col=False,
+        requires_date_col=True,
+        requires_N=True,
+        fixed_comparisons=["COUNT_ALL({key_col}) > 0"],
+        reasoning="Used for product purchase/subscription presence from last month onwards or last month to date."
+    ),
+
+    make_seed(
+        seed_id="S156_product_presence_current_or_previous_month",
+        description="Product presence for product list in current or previous month",
+        client="global",
+        output_template="{key_col} IN LIST ({list_values}) AND ({date_col} = CurrentMonth-1MONTHS OR {date_col} = CurrentMonth) AND COUNT_ALL({key_col}) > 0",
+        agg_type="COUNT_ALL",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="current_or_previous",
+        requires_kpi_col=False,
+        requires_date_col=True,
+        requires_N=True,
+        fixed_comparisons=["COUNT_ALL({key_col}) > 0"],
+        reasoning="Used for product purchase/subscription presence when the month window is explicitly current month or previous month."
+    ),
+
+    make_seed(
         seed_id="S147_last_n_days_sum_groupby",
         description="SUM KPI over last N days grouped by a categorical column",
         client="global",

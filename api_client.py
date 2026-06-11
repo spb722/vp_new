@@ -1,3 +1,5 @@
+import contextvars
+from contextlib import contextmanager
 import json
 import sqlite3
 import time
@@ -16,6 +18,43 @@ VP_VERIFY_CACHE_TTL = 3600  # seconds (1 hour)
 
 _VP_VERIFY_CACHE: dict[str, tuple[dict, float]] = {}  # L1: in-memory (per session)
 _db_conn: sqlite3.Connection | None = None             # L2: SQLite (persistent)
+_VP_VERIFY_TRACE = contextvars.ContextVar("vp_verify_trace", default=None)
+_VP_VERIFY_CONTEXT = contextvars.ContextVar("vp_verify_context", default=None)
+
+
+def start_vp_verify_trace() -> None:
+    _VP_VERIFY_TRACE.set([])
+
+
+def get_vp_verify_trace() -> list[dict]:
+    return list(_VP_VERIFY_TRACE.get() or [])
+
+
+@contextmanager
+def vp_verify_lookup_context(**context):
+    current = _VP_VERIFY_CONTEXT.get() or {}
+    token = _VP_VERIFY_CONTEXT.set({**current, **context})
+    try:
+        yield
+    finally:
+        _VP_VERIFY_CONTEXT.reset(token)
+
+
+def _record_vp_verify_event(event: dict) -> None:
+    trace = _VP_VERIFY_TRACE.get()
+    if trace is None:
+        return
+
+    context = _VP_VERIFY_CONTEXT.get() or {}
+    trace.append({**context, **event})
+
+
+def _response_counts(result: dict | None) -> dict:
+    output = (result or {}).get("output") or {}
+    return {
+        "matches_count": len(output.get("matches") or []),
+        "unmatched_count": len(output.get("unmatched") or []),
+    }
 
 
 def _get_db() -> sqlite3.Connection:
@@ -40,10 +79,21 @@ def _get_db() -> sqlite3.Connection:
 @traceable(run_type="tool", name="VP_verify")
 def call_vp_verify(condition_text: str) -> dict:
     now = time.time()
+    payload = {"conditions": [condition_text], "check": False}
 
     # ── L1: in-memory ──────────────────────────────────────────────────────────
     cached = _VP_VERIFY_CACHE.get(condition_text)
     if cached and now < cached[1]:
+        _record_vp_verify_event({
+            "condition_text": condition_text,
+            "url": VP_VERIFY_URL,
+            "payload": payload,
+            "source": "l1_cache",
+            "request_sent": False,
+            "status": "cache_hit",
+            "response": cached[0],
+            **_response_counts(cached[0]),
+        })
         return cached[0]
 
     # ── L2: SQLite ─────────────────────────────────────────────────────────────
@@ -56,15 +106,84 @@ def call_vp_verify(condition_text: str) -> dict:
     if row and now < row[1]:
         result = json.loads(row[0])
         _VP_VERIFY_CACHE[condition_text] = (result, row[1])  # warm L1
+        _record_vp_verify_event({
+            "condition_text": condition_text,
+            "url": VP_VERIFY_URL,
+            "payload": payload,
+            "source": "sqlite_cache",
+            "request_sent": False,
+            "status": "cache_hit",
+            "response": result,
+            **_response_counts(result),
+        })
         return result
 
     # ── Miss: call VP_verify API ───────────────────────────────────────────────
-    payload = {"conditions": [condition_text], "check": False}
-    response = requests.post(VP_VERIFY_URL, json=payload, verify=False, timeout=3000)
-    response.raise_for_status()
-    result = response.json()
+    response = None
+    try:
+        response = requests.post(VP_VERIFY_URL, json=payload, verify=False, timeout=3000)
+        response_json = None
+        response_text = None
+
+        try:
+            response_json = response.json()
+        except ValueError:
+            response_text = response.text
+
+        if not response.ok:
+            _record_vp_verify_event({
+                "condition_text": condition_text,
+                "url": VP_VERIFY_URL,
+                "payload": payload,
+                "source": "http",
+                "request_sent": True,
+                "status": "http_error",
+                "status_code": response.status_code,
+                "response": response_json,
+                "response_text": response_text,
+            })
+            response.raise_for_status()
+
+        if response_json is None:
+            _record_vp_verify_event({
+                "condition_text": condition_text,
+                "url": VP_VERIFY_URL,
+                "payload": payload,
+                "source": "http",
+                "request_sent": True,
+                "status": "json_parse_error",
+                "status_code": response.status_code,
+                "response_text": response_text,
+            })
+            raise ValueError("VP_verify response was not valid JSON.")
+
+        result = response_json
+    except Exception as exc:
+        if response is None:
+            _record_vp_verify_event({
+                "condition_text": condition_text,
+                "url": VP_VERIFY_URL,
+                "payload": payload,
+                "source": "http",
+                "request_sent": True,
+                "status": "request_error",
+                "error": str(exc),
+            })
+        raise
 
     has_matches = bool((result.get("output") or {}).get("matches"))
+    _record_vp_verify_event({
+        "condition_text": condition_text,
+        "url": VP_VERIFY_URL,
+        "payload": payload,
+        "source": "http",
+        "request_sent": True,
+        "status": "ok",
+        "status_code": response.status_code,
+        "response": result,
+        **_response_counts(result),
+    })
+
     if has_matches:
         expires_at = now + VP_VERIFY_CACHE_TTL
         _VP_VERIFY_CACHE[condition_text] = (result, expires_at)
@@ -239,7 +358,12 @@ def resolve_attribute_value_with_api(value: str, original_clause_text: str | Non
             unique_candidates.append(text_clean)
 
     for text in unique_candidates:
-        resolved = resolve_condition_from_api(text)
+        with vp_verify_lookup_context(
+            lookup_type="attribute_value",
+            source_text=original_clause_text,
+            candidate_text=text,
+        ):
+            resolved = resolve_condition_from_api(text)
 
         if resolved["matched"]:
             return {
@@ -307,7 +431,8 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "raw_response": None
         }
 
-    resolved = resolve_condition_from_api(cleaned_text)
+    with vp_verify_lookup_context(lookup_type="kpi", source_text=cleaned_text):
+        resolved = resolve_condition_from_api(cleaned_text)
 
     return {
         "matched": resolved["matched"],
@@ -363,11 +488,21 @@ def extract_count_constraint_parts(features: dict) -> dict:
 
     # Try resolving the counted item first.
     # Example: "bundled SMS"
-    resolved = resolve_condition_from_api(counted_item)
+    with vp_verify_lookup_context(
+        lookup_type="count_constraint",
+        source_text=clause.get("text"),
+        candidate_text=counted_item,
+    ):
+        resolved = resolve_condition_from_api(counted_item)
 
     # If that fails, try full clause text.
     if not resolved["matched"]:
-        resolved = resolve_condition_from_api(clause.get("text", ""))
+        with vp_verify_lookup_context(
+            lookup_type="count_constraint",
+            source_text=clause.get("text"),
+            candidate_text=clause.get("text", ""),
+        ):
+            resolved = resolve_condition_from_api(clause.get("text", ""))
 
     if not resolved["matched"]:
         raise Exception(f"Could not resolve count constraint column: {clause}")

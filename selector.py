@@ -85,13 +85,19 @@ def get_preferred_bound_styles(features: dict) -> list:
     if time_unit is None:
         return ["none"]
 
+    if time_unit == "MONTHS" and features.get("month_window_style"):
+        return [features["month_window_style"]]
+
     # "last 2 completed months" / "excluding current period"
     if is_completed:
         return ["bounded"]
 
-    # Normal "last N days/weeks/months" means lower-only for now.
-    if time_unit in ["DAYS", "WEEKS", "MONTHS"]:
+    # Normal "last N days/weeks" means lower-only for now.
+    if time_unit in ["DAYS", "WEEKS"]:
         return ["lower_only"]
+
+    if time_unit == "MONTHS":
+        return ["bounded"]
 
     return ["lower_only"]
 

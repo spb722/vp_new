@@ -1,4 +1,17 @@
 def normalize_decomposition(result: dict) -> dict:
+    completed_period_markers = [
+        "completed",
+        "previous complete",
+        "excluding today",
+        "exclude today",
+        "excluding current",
+        "exclude current",
+        "complete day",
+        "complete days",
+        "complete week",
+        "complete weeks",
+    ]
+
     for clause in result.get("clauses", []):
         clause_type = clause.get("clause_type")
 
@@ -13,9 +26,16 @@ def normalize_decomposition(result: dict) -> dict:
         # Normal time windows default to not completed.
         if clause_type == "time_window":
             text = clause.get("text", "").lower()
+            time_unit = clause.get("time_unit")
+            has_explicit_completed_marker = any(
+                marker in text for marker in completed_period_markers
+            )
+
+            if time_unit in ["DAYS", "WEEKS"] and not has_explicit_completed_marker:
+                clause["is_completed_period"] = False
 
             if clause.get("is_completed_period") is None:
-                if "completed" in text or "previous complete" in text:
+                if has_explicit_completed_marker:
                     clause["is_completed_period"] = True
                 else:
                     clause["is_completed_period"] = False

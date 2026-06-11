@@ -1,6 +1,10 @@
 import re
 
-from api_client import resolve_condition_from_api, extract_count_constraint_parts
+from api_client import (
+    extract_count_constraint_parts,
+    resolve_condition_from_api,
+    vp_verify_lookup_context,
+)
 
 
 def infer_date_col(kpi_mapping: dict, features: dict) -> str:
@@ -40,7 +44,12 @@ def resolve_groupby_col(features: dict) -> str | None:
         return None
 
     # Try API
-    resolved = resolve_condition_from_api(groupby_text)
+    with vp_verify_lookup_context(
+        lookup_type="groupby",
+        source_text=groupby_text,
+        candidate_text=groupby_text,
+    ):
+        resolved = resolve_condition_from_api(groupby_text)
 
     if resolved["matched"]:
         return resolved["column"]
@@ -82,7 +91,12 @@ def resolve_filter_clause(clause: dict) -> dict:
         candidates.append(str(value))
 
     for text in candidates:
-        resolved = resolve_condition_from_api(text)
+        with vp_verify_lookup_context(
+            lookup_type="attribute_filter",
+            source_text=clause_text,
+            candidate_text=text,
+        ):
+            resolved = resolve_condition_from_api(text)
 
         if resolved["matched"]:
             return {
@@ -155,7 +169,12 @@ def resolve_dynamic_filter_fixed_count_parts(features: dict) -> dict:
     for candidate in dict.fromkeys(candidates):
         if not candidate:
             continue
-        candidate_resolution = resolve_condition_from_api(candidate)
+        with vp_verify_lookup_context(
+            lookup_type="dynamic_filter",
+            source_text=entity_text,
+            candidate_text=candidate,
+        ):
+            candidate_resolution = resolve_condition_from_api(candidate)
         if candidate_resolution["matched"]:
             resolved = candidate_resolution
             break
@@ -285,7 +304,12 @@ def resolve_filter_column(clause: dict) -> str:
         candidates.append(str(value))
 
     for text in candidates:
-        resolved = resolve_condition_from_api(text)
+        with vp_verify_lookup_context(
+            lookup_type="attribute_filter",
+            source_text=clause_text,
+            candidate_text=text,
+        ):
+            resolved = resolve_condition_from_api(text)
 
         if resolved["matched"]:
             return resolved["column"]
@@ -358,7 +382,12 @@ def render_duration_threshold(clause: dict) -> str:
         if not text:
             continue
 
-        resolved = resolve_condition_from_api(text)
+        with vp_verify_lookup_context(
+            lookup_type="duration_threshold",
+            source_text=clause.get("text", ""),
+            candidate_text=text,
+        ):
+            resolved = resolve_condition_from_api(text)
 
         if resolved["matched"]:
             column = resolved["column"]
