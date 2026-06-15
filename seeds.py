@@ -129,6 +129,19 @@ extra_seeds = [
         reasoning="Supports reusable rolling-day MAX patterns such as maximum local data revenue in the past 2 days."
     ),
     make_seed(
+        seed_id="S158_last_n_months_max_bounded",
+        description="Generic MAX KPI over last N completed months using bounded CurrentMonth window",
+        client="both",
+        output_template="{date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth AND MAX({kpi_col}) ${operator} ${value}",
+        agg_type="MAX",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="bounded",
+        requires_date_col=True,
+        requires_N=True,
+        reasoning="Supports bounded month-window MAX patterns such as maximum data usage over the last 3 months."
+    ),
+    make_seed(
         seed_id="S136_last_n_weeks_sum_lower_only",
         description="Generic SUM KPI over last N weeks using lower-only CurrentWeek window",
         client="both",
