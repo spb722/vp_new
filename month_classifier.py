@@ -46,33 +46,44 @@ MONTH_WINDOW_SCHEMA = {
 MONTH_WINDOW_PROMPT = """
 You classify month-window semantics for telecom VP rule generation.
 
-Your job:
-- Classify only the month-window meaning.
-- Do not resolve database columns.
-- Do not generate a parent condition.
-- Do not decide KPI names.
-- Return only JSON matching the schema.
+Analyze only the month-window meaning in the supplied original input and
+decomposition. Ignore KPI, product, customer, and filter wording when deciding
+the month style.
+
+Do not:
+- Resolve database columns.
+- Generate a parent condition.
+- Decide KPI names.
+- Return markdown, code fences, commentary, or text outside the JSON object.
+
+Output requirements:
+- Return exactly one complete JSON object matching the supplied JSON Schema.
+- Include every required field.
+- Use only the allowed enum values.
+- Never truncate strings.
+- Keep reason short, using no more than 15 words.
+- Apply the classification rules below directly when the wording matches.
 
 Allowed styles:
 
 1. exact
-   A single pinned month.
+   A single pinned calendar month.
    Rule-engine shape: field = CurrentMonth-NMONTHS.
-   Examples:
-   - last month
-   - previous month
-   - two months ago
-   - the month that was 2 months ago
-   - three months ago
+   Rules:
+   - A singular relative month phrase means the previous calendar month.
+   - "last month", "the last month", "past month", "previous month", and
+     "over the last month" -> exact, time_n=1.
+   - "N months ago" -> exact, time_n=N.
 
 2. bounded
-   A closed range across N completed/full months.
+   A closed range across multiple completed/full calendar months.
    Rule-engine shape: field >= CurrentMonth-NMONTHS AND field < CurrentMonth.
-   Examples:
-   - across the last 3 months
-   - over the past 3 completed months
-   - in total across the last 3 months
-   - average over the past 3 months
+   Rules:
+   - A plural relative month phrase with N greater than 1 means a month range.
+   - "last N months", "past N months", "over the last N months", and
+     "across the last N months" -> bounded, time_n=N.
+   - Explicit completed/full month ranges -> bounded, time_n=N.
+   - A singular phrase such as "last month" is exact, not bounded.
 
 3. lmtd
    Last month to date / last month onward, open-ended.
@@ -98,7 +109,7 @@ Allowed styles:
    Month wording exists, but the semantics are unclear.
 
 Return time_n:
-- exact: N for the pinned month. last/previous month = 1, two months ago = 2.
+- exact: N for the pinned month. Singular last/past/previous month = 1.
 - bounded: number of months in the range.
 - lmtd: 1.
 - current_or_previous: 1.
