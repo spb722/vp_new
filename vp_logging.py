@@ -1,6 +1,12 @@
 from pprint import pformat
 
-from config import LLM_PROVIDER, MODEL, REASONING_EFFORT
+from config import (
+    DECOMPOSITION_BASE_URL,
+    DECOMPOSITION_MODEL,
+    LLM_PROVIDER,
+    MODEL,
+    REASONING_EFFORT,
+)
 
 
 SEPARATOR = "=" * 80
@@ -272,8 +278,15 @@ def print_vp_resolve_log(request, result: dict) -> None:
     print("\nClient:")
     print(f"  {_format_value(request.client_name)}")
 
-    print("\nProvider:")
-    print(f"  {LLM_PROVIDER} | model={MODEL} | reasoning={REASONING_EFFORT}")
+    print("\nProviders:")
+    print(
+        "  decomposition: ollama "
+        f"| model={DECOMPOSITION_MODEL} | base_url={DECOMPOSITION_BASE_URL}"
+    )
+    print(
+        f"  secondary: {LLM_PROVIDER} "
+        f"| model={MODEL} | reasoning={REASONING_EFFORT}"
+    )
 
     _print_flow(result)
     _print_decomposition(result)
