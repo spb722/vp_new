@@ -46,7 +46,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 
-from config import MODEL
+from config import DECOMPOSITION_MODEL
 from decomposer import (
     DecompositionError,
     decompose_vp_input,
@@ -108,7 +108,11 @@ class VPState(TypedDict):
 
 # ── Retry-aware decomposer ─────────────────────────────────────────────────
 
-@traceable(name="decompose_vp_input_retry", run_type="llm", metadata={"model": MODEL})
+@traceable(
+    name="decompose_vp_input_retry",
+    run_type="llm",
+    metadata={"provider": "ollama", "model": DECOMPOSITION_MODEL},
+)
 def _decompose_with_retry(user_input: str, last_error: str) -> dict:
     """
     Same as decompose_vp_input but sends the previous error back to the LLM

@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "total_seeds": 156,
+    "total_seeds": 157,
     "total_csv_rows_covered": 754,
     "omantel_csv_rows": 602,
     "airtel_csv_rows": 111,
@@ -15560,6 +15560,65 @@
           ],
           "anchors": [
             "CurrentMonth"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S157_last_n_days_max_lower_only",
+      "description": "Generic MAX KPI over last N days using lower-only CurrentTime window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND MAX({kpi_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports reusable rolling-day MAX patterns such as maximum local data revenue in the past 2 days.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "MAX",
+        "operation": {
+          "function": "MAX",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
           ],
           "bound_style": "lower_only"
         },

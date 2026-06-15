@@ -67,12 +67,18 @@ class DecomposerTests(unittest.TestCase):
             VALID_DECOMPOSITION,
         ])
 
-        with patch.object(decomposer, "client", fake_client):
+        with patch.object(decomposer, "decomposition_client", fake_client):
             result = decompose_vp_input("total revenue")
 
         self.assertEqual(result["original_input"], "total revenue")
         self.assertEqual(result["clauses"][0]["kpi_text"], "revenue")
         self.assertEqual(len(fake_client.chat.completions.calls), 2)
+        self.assertEqual(
+            fake_client.chat.completions.calls[0]["model"],
+            decomposer.DECOMPOSITION_MODEL,
+        )
+        self.assertIn("max_tokens", fake_client.chat.completions.calls[0])
+        self.assertNotIn("max_completion_tokens", fake_client.chat.completions.calls[0])
         retry_messages = fake_client.chat.completions.calls[1]["messages"]
         self.assertIn("not valid JSON", retry_messages[-1]["content"])
 
@@ -82,7 +88,7 @@ class DecomposerTests(unittest.TestCase):
             '{"original_input": "total revenue", "clauses": [{"text": "still bad}]',
         ])
 
-        with patch.object(decomposer, "client", fake_client):
+        with patch.object(decomposer, "decomposition_client", fake_client):
             with self.assertRaises(DecompositionError):
                 decompose_vp_input("total revenue")
 
@@ -92,7 +98,7 @@ class DecomposerTests(unittest.TestCase):
             RuntimeError("provider unavailable")
         )
 
-        with patch.object(decomposer, "client", fake_client):
+        with patch.object(decomposer, "decomposition_client", fake_client):
             with self.assertRaisesRegex(DecompositionError, "request failed"):
                 decompose_vp_input("total revenue")
 
