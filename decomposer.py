@@ -3,7 +3,11 @@ from json import JSONDecodeError
 
 from langsmith import traceable
 
-from config import client, MODEL, chat_completion_options
+from config import (
+    DECOMPOSITION_MODEL,
+    decomposition_chat_completion_options,
+    decomposition_client,
+)
 
 decomposition_schema = {
     "name": "vp_decomposition",
@@ -307,10 +311,10 @@ def _decomposition_response_format() -> dict:
 
 
 def _create_decomposition(messages: list[dict]) -> str:
-    response = client.chat.completions.create(
-        model=MODEL,
+    response = decomposition_client.chat.completions.create(
+        model=DECOMPOSITION_MODEL,
         temperature=0,
-        **chat_completion_options(),
+        **decomposition_chat_completion_options(),
         messages=messages,
         response_format=_decomposition_response_format()
     )
@@ -362,7 +366,11 @@ def _parse_or_repair_decomposition(messages: list[dict], user_input: str) -> dic
     )
 
 
-@traceable(run_type="llm", name="decompose_vp_input", metadata={"model": MODEL})
+@traceable(
+    run_type="llm",
+    name="decompose_vp_input",
+    metadata={"provider": "ollama", "model": DECOMPOSITION_MODEL},
+)
 def decompose_vp_input(user_input: str) -> dict:
     return _parse_or_repair_decomposition(
         messages=[
