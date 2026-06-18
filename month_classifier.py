@@ -139,6 +139,24 @@ def parse_month_window_content(content: str) -> dict:
         "confidence",
         "reason",
     }
+
+    # Some OpenAI-compatible local providers accept the JSON schema parameter
+    # but do not enforce every required field. If the semantic classification is
+    # present, complete the envelope instead of forcing the resolver into the
+    # "unknown" path and losing all seed candidates.
+    if isinstance(parsed.get("style"), str):
+        style = parsed["style"]
+        if "has_month_window" not in parsed and style not in ("none", "unknown"):
+            parsed["has_month_window"] = True
+        if "has_month_window" not in parsed and style in ("none", "unknown"):
+            parsed["has_month_window"] = False
+        if "confidence" not in parsed:
+            parsed["confidence"] = "medium"
+        if "reason" not in parsed:
+            parsed["reason"] = ""
+        if "time_n" not in parsed:
+            parsed["time_n"] = None
+
     missing = required - set(parsed)
     if missing:
         raise ValueError(f"Month-window classifier missing keys: {sorted(missing)}")

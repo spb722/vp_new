@@ -98,6 +98,50 @@ class DecomposerTests(unittest.TestCase):
                 "legacy-decomposition-key",
             )
 
+    def test_secondary_freellmapi_provider_aliases_are_supported(self):
+        self.assertEqual(config.normalize_llm_provider("free-llm-api"), "freellmapi")
+        self.assertEqual(config.normalize_llm_provider("free_llm_api"), "freellmapi")
+        self.assertEqual(config.normalize_llm_provider("freellmapi"), "freellmapi")
+
+    def test_secondary_freellmapi_apikey_fallback_is_supported(self):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_API_KEY": "",
+                "LLM_APIKEY": "secondary-free-key",
+                "DECOMPOSITION_API_KEY": "decomposition-key",
+                "DECOMPOSITION_APIKEY": "legacy-decomposition-key",
+            },
+        ):
+            self.assertEqual(
+                config.get_llm_api_key("free-llm-api"),
+                "secondary-free-key",
+            )
+
+    def test_secondary_freellmapi_can_reuse_decomposition_apikey(self):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_API_KEY": "",
+                "LLM_APIKEY": "",
+                "DECOMPOSITION_API_KEY": "",
+                "DECOMPOSITION_APIKEY": "shared-free-key",
+            },
+        ):
+            self.assertEqual(
+                config.get_llm_api_key("freellmapi"),
+                "shared-free-key",
+            )
+
+    def test_secondary_freellmapi_uses_openai_compatible_token_option(self):
+        with patch.object(config, "LLM_PROVIDER", "freellmapi"):
+            options = config.chat_completion_options()
+
+        self.assertIn("max_tokens", options)
+        self.assertNotIn("max_completion_tokens", options)
+        self.assertNotIn("reasoning_effort", options)
+        self.assertNotIn("extra_body", options)
+
     def test_decomposition_schema_accepts_v2_response_shape(self):
         payload = {
             "schema_version": "2.0",

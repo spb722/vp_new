@@ -203,6 +203,9 @@ class FormulaFeatureTests(unittest.TestCase):
                 "List customers who purchased either product 123 or product 125 "
                 "in the past month."
             ),
+            "seed_intent": {
+                "time_bound_style": "lower_only",
+            },
             "clauses": [
                 {
                     "clause_id": "1",
@@ -250,6 +253,7 @@ class FormulaFeatureTests(unittest.TestCase):
         self.assertEqual(features["time_unit"], "MONTHS")
         self.assertEqual(features["time_n"], 1)
         self.assertEqual(features["month_window_style"], "exact")
+        self.assertEqual(features["time_bound_style"], "exact")
         self.assertEqual(
             features["product_presence"],
             {"product_ids": ["123", "125"], "presence_direction": "present"},

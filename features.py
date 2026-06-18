@@ -830,6 +830,7 @@ def build_seed_features(result: dict) -> dict:
 
             if month_window.get("has_month_window") and month_window_style not in ("none", "unknown"):
                 time_unit = "MONTHS"
+                time_bound_style = month_window_style
 
             if month_window_style == "unknown":
                 month_window_classifier_error = month_window.get("reason")

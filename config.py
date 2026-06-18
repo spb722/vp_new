@@ -13,6 +13,12 @@ def normalize_decomposition_provider(provider: str | None) -> str:
     ).strip().lower().replace("-", "").replace("_", "")
 
 
+def normalize_llm_provider(provider: str | None) -> str:
+    return (
+        provider or "groq"
+    ).strip().lower().replace("-", "").replace("_", "")
+
+
 def get_decomposition_api_key() -> str:
     return (
         os.getenv("DECOMPOSITION_API_KEY")
@@ -21,10 +27,31 @@ def get_decomposition_api_key() -> str:
     )
 
 
+def get_llm_api_key(provider: str | None = None) -> str | None:
+    normalized_provider = normalize_llm_provider(provider or os.getenv("LLM_PROVIDER"))
+
+    if normalized_provider == "groq":
+        return os.getenv("GROQ_API_KEY")
+
+    if normalized_provider == "openrouter":
+        return os.getenv("OPENROUTER_API_KEY")
+
+    if normalized_provider == "freellmapi":
+        return (
+            os.getenv("LLM_API_KEY")
+            or os.getenv("LLM_APIKEY")
+            or os.getenv("DECOMPOSITION_API_KEY")
+            or os.getenv("DECOMPOSITION_APIKEY")
+        )
+
+    return None
+
+
 DATA_DIR = Path(os.getenv("VP_DATA_DIR", "./data"))
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").strip().lower()
+LLM_PROVIDER = normalize_llm_provider(os.getenv("LLM_PROVIDER"))
 MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL")
 REASONING_EFFORT = os.getenv("REASONING_EFFORT", "medium")
 MAX_COMPLETION_TOKENS = int(os.getenv("MAX_COMPLETION_TOKENS", "4096"))
 DECOMPOSITION_LLM_PROVIDER = normalize_decomposition_provider(
@@ -51,21 +78,33 @@ VP_VERIFY_URL = "http://localhost:5678/webhook/VP_verify"
 if LLM_PROVIDER == "groq":
     from groq import Groq
 
-    _api_key = os.environ.get("GROQ_API_KEY")
+    _api_key = get_llm_api_key(LLM_PROVIDER)
     if not _api_key:
         raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
     client = Groq(api_key=_api_key)
 elif LLM_PROVIDER == "openrouter":
-    _api_key = os.environ.get("OPENROUTER_API_KEY")
+    _api_key = get_llm_api_key(LLM_PROVIDER)
     if not _api_key:
         raise EnvironmentError("OPENROUTER_API_KEY environment variable is not set.")
     client = OpenAI(
         api_key=_api_key,
-        base_url="https://openrouter.ai/api/v1",
+        base_url=LLM_BASE_URL or "https://openrouter.ai/api/v1",
+    )
+elif LLM_PROVIDER == "freellmapi":
+    _api_key = get_llm_api_key(LLM_PROVIDER)
+    if not _api_key:
+        raise EnvironmentError(
+            "LLM_API_KEY or LLM_APIKEY environment variable is not set "
+            "for freellmapi."
+        )
+    client = OpenAI(
+        api_key=_api_key,
+        base_url=LLM_BASE_URL or "http://localhost:3001/v1/",
     )
 else:
     raise ValueError(
-        "Unsupported LLM_PROVIDER. Expected 'groq' or 'openrouter', "
+        "Unsupported LLM_PROVIDER. Expected 'groq', 'openrouter', "
+        "or 'freellmapi', "
         f"got {LLM_PROVIDER!r}."
     )
 
@@ -89,6 +128,11 @@ def chat_completion_options() -> dict:
         return {
             "extra_body": extra_body,
             "max_completion_tokens": MAX_COMPLETION_TOKENS,
+        }
+
+    if LLM_PROVIDER == "freellmapi":
+        return {
+            "max_tokens": MAX_COMPLETION_TOKENS,
         }
 
     return {
