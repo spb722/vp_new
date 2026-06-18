@@ -103,6 +103,19 @@ extra_seeds = [
         reasoning="Existing S08 is hardcoded to CurrentMonth-1MONTHS. This seed supports reusable last N months SUM patterns such as total free data revenue in the last 3 months."
     ),
     make_seed(
+        seed_id="S159_last_n_months_sum_exact",
+        description="Generic SUM KPI for an exact previous month using CurrentMonth equality",
+        client="both",
+        output_template="{date_col} = CurrentMonth-{N}MONTHS AND SUM({kpi_col}) ${operator} ${value}",
+        agg_type="SUM",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="exact",
+        requires_date_col=True,
+        requires_N=True,
+        reasoning="Supports singular exact-month SUM requests such as total prepaid SMS revenue for the last one month."
+    ),
+    make_seed(
         seed_id="S135_last_n_months_max_lower_only",
         description="Generic MAX KPI over last N months using lower-only CurrentMonth window",
         client="both",
@@ -231,6 +244,25 @@ extra_seeds = [
             "positive_guard": True
         },
         reasoning="Supports calculated percentage formulas such as calculated 20% of recharge amount. This follows the catalog's existing virtual-formula style."
+    ),
+    make_seed(
+        seed_id="S160_percentage_of_kpi_formula_months_lower_only",
+        description="Calculated percentage of a KPI over last N months using virtual formula",
+        client="both",
+        output_template="{date_col} >= CurrentMonth-{N}MONTHS AND SUM(V{{{vp_name}}}=f{{({kpi_col}*{factor})}}) ${operator} ${value}",
+        agg_type="FORMULA",
+        units=["MONTHS"],
+        anchors=["CurrentMonth"],
+        bound_style="lower_only",
+        has_formula=True,
+        formula_type="percentage_of_kpi",
+        guards={
+            "not_null_guard": False,
+            "positive_guard": False
+        },
+        requires_date_col=True,
+        requires_N=True,
+        reasoning="Supports percentage formulas with an explicit month window, such as 20% of recharge amount in the last 2 months."
     ),
     make_seed(
         seed_id="S142_avg_formula_months_lower_only",

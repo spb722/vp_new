@@ -313,6 +313,7 @@ def resolve_condition_from_api(condition_text: str) -> dict:
         "column": best.get("kpi"),
         "table_name": best.get("table_name"),
         "datatype": best.get("datatype"),
+        "date_column": best.get("date_column"),
         "raw_match": best,
         "raw_response": api_response
     }
@@ -372,6 +373,7 @@ def resolve_attribute_value_with_api(value: str, original_clause_text: str | Non
                 "column": resolved["column"],
                 "table_name": resolved["table_name"],
                 "datatype": resolved["datatype"],
+                "date_column": resolved.get("date_column"),
                 "resolved_from": text,
                 "raw_resolution": resolved
             }
@@ -405,6 +407,7 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "kpi_col": "Profile_Cdr_Account_No",
             "table_name": "Profile_Cdr_group",
             "datatype": "categorical",
+            "date_column": None,
             "raw_match": None,
             "raw_response": None
         }
@@ -416,6 +419,7 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "kpi_col": "SUBSCRIPTIONS_Product_Id",
             "table_name": "SUBSCRIPTIONS",
             "datatype": "categorical",
+            "date_column": None,
             "raw_match": None,
             "raw_response": None
         }
@@ -427,6 +431,7 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "kpi_col": "L_ACTION_KEY",
             "table_name": "LIFECYCLE_PROMO",
             "datatype": "categorical",
+            "date_column": None,
             "raw_match": None,
             "raw_response": None
         }
@@ -440,6 +445,7 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
         "kpi_col": resolved["column"],
         "table_name": resolved["table_name"],
         "datatype": resolved["datatype"],
+        "date_column": resolved.get("date_column"),
         "raw_match": resolved.get("raw_match"),
         "raw_response": resolved.get("raw_response")
     }

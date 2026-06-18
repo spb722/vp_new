@@ -81,9 +81,13 @@ def get_preferred_bound_styles(features: dict) -> list:
 
     time_unit = features.get("time_unit")
     is_completed = features.get("is_completed_period")
+    time_bound_style = features.get("time_bound_style")
 
     if time_unit is None:
         return ["none"]
+
+    if time_bound_style:
+        return [time_bound_style]
 
     if time_unit == "MONTHS" and features.get("month_window_style"):
         return [features["month_window_style"]]
@@ -97,7 +101,7 @@ def get_preferred_bound_styles(features: dict) -> list:
         return ["lower_only"]
 
     if time_unit == "MONTHS":
-        return ["bounded"]
+        return ["lower_only"]
 
     return ["lower_only"]
 
@@ -109,20 +113,18 @@ def score_seed(seed: dict, features: dict, client_name: str | None = None) -> di
     reasons = []
     warnings = []
 
-# 1. Client scoring
+    # 1. Client scoring
     scope_info = get_seed_client_scope(seed)
 
-    if client_name is None:
-        # Client not provided at inference time.
-        # Do not reward or punish client-specific seeds here.
-        reasons.append("client_not_provided")
-
-    else:
+    if client_name is not None:
         client_name = client_name.lower()
 
     if scope_info["scope"] == "global":
         score += 7
         reasons.append("client_global_seed")
+
+    elif client_name is None:
+        reasons.append("client_not_provided")
 
     elif client_name in scope_info["clients"]:
         score += 10
@@ -468,7 +470,7 @@ def hard_reject_seed(seed: dict, features: dict) -> list:
 def select_seed_candidates_strict(
     features: dict,
     seeds: list,
-    client_name: str = "omantel",
+    client_name: str | None = None,
     top_k: int = 5
 ) -> list:
     scored = []

@@ -17,6 +17,7 @@ class VPLoggingTests(unittest.TestCase):
         output = StringIO()
 
         with (
+            patch.object(vp_logging, "DECOMPOSITION_LLM_PROVIDER", "freellmapi"),
             patch.object(vp_logging, "DECOMPOSITION_MODEL", "telecom-vp:3b"),
             patch.object(
                 vp_logging,
@@ -33,7 +34,7 @@ class VPLoggingTests(unittest.TestCase):
             )
 
         logged = output.getvalue()
-        self.assertIn("decomposition: ollama", logged)
+        self.assertIn("decomposition: freellmapi", logged)
         self.assertIn("model=telecom-vp:3b", logged)
         self.assertIn("base_url=http://localhost:11434/v1/", logged)
         self.assertIn("secondary: openrouter", logged)

@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "total_seeds": 158,
+    "total_seeds": 160,
     "total_csv_rows_covered": 754,
     "omantel_csv_rows": 602,
     "airtel_csv_rows": 111,
@@ -15538,6 +15538,65 @@
       "source": "extra_seed"
     },
     {
+      "seed_id": "S159_last_n_months_sum_exact",
+      "description": "Generic SUM KPI for an exact previous month using CurrentMonth equality",
+      "client": "both",
+      "output_template": "{date_col} = CurrentMonth-{N}MONTHS AND SUM({kpi_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports singular exact-month SUM requests such as total prepaid SMS revenue for the last one month.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "SUM",
+        "operation": {
+          "function": "SUM",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "exact"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
       "seed_id": "S135_last_n_months_max_lower_only",
       "description": "Generic MAX KPI over last N months using lower-only CurrentMonth window",
       "client": "both",
@@ -16071,6 +16130,65 @@
           "requires_kpi_col": true,
           "requires_date_col": false,
           "requires_N": false
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S160_percentage_of_kpi_formula_months_lower_only",
+      "description": "Calculated percentage of a KPI over last N months using virtual formula",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND SUM(V{{{vp_name}}}=f{{({kpi_col}*{factor})}}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports percentage formulas with an explicit month window, such as 20% of recharge amount in the last 2 months.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "FORMULA",
+        "operation": {
+          "function": "FORMULA",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": true,
+          "formula_type": "percentage_of_kpi",
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
         }
       },
       "source": "extra_seed"

@@ -46,7 +46,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 
-from config import DECOMPOSITION_MODEL
+from config import DECOMPOSITION_LLM_PROVIDER, DECOMPOSITION_MODEL
 from decomposer import (
     DecompositionError,
     decompose_vp_input,
@@ -111,7 +111,7 @@ class VPState(TypedDict):
 @traceable(
     name="decompose_vp_input_retry",
     run_type="llm",
-    metadata={"provider": "ollama", "model": DECOMPOSITION_MODEL},
+    metadata={"provider": DECOMPOSITION_LLM_PROVIDER, "model": DECOMPOSITION_MODEL},
 )
 def _decompose_with_retry(user_input: str, last_error: str) -> dict:
     """
@@ -364,7 +364,7 @@ def validate_output(state: VPState) -> dict:
     if not final.strip():
         errors.append("final_parent_condition is empty")
 
-    unresolved = re.findall(r"(?<!\$)\{[a-z_]+\}", final)
+    unresolved = re.findall(r"(?<!\$)\{[A-Za-z_][A-Za-z0-9_]*\}", final)
     if unresolved:
         errors.append(f"Unresolved placeholders: {unresolved}")
 

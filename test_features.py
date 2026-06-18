@@ -520,6 +520,306 @@ class FormulaFeatureTests(unittest.TestCase):
         self.assertIsNone(features["formula_type"])
         self.assertEqual(features["kpi_text"], "recharge amount")
 
+    def test_time_window_clause_drives_measurement_time(self):
+        result = {
+            "schema_version": "2.0",
+            "original_input": "Show total revenue from prepaid users over the last 2 days",
+            "clauses": [
+                {
+                    "clause_id": "C1",
+                    "clause_type": "aggregation",
+                    "text": "total revenue",
+                    "agg_hint": "SUM",
+                    "kpi_text": "revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C2",
+                    "clause_type": "attribute_filter",
+                    "text": "prepaid users",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": "=",
+                    "values": ["prepaid"],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C3",
+                    "clause_type": "time_window",
+                    "text": "over the last 2 days",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": 2,
+                    "time_unit": "DAYS",
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "SUM",
+                "formula_type": "none",
+                "time_required": True,
+                "time_unit": "DAYS",
+                "time_bound_style": "lower_only",
+                "groupby_required": False,
+                "parameterized_window": False,
+                "has_count_constraint": False,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": None,
+            },
+        }
+
+        features = build_seed_features(result)
+
+        self.assertEqual(features["agg_type"], "SUM")
+        self.assertEqual(features["time_unit"], "DAYS")
+        self.assertEqual(features["time_n"], 2)
+        self.assertEqual(features["time_bound_style"], "lower_only")
+        self.assertEqual(features["attribute_filters"][0]["values"], ["prepaid"])
+
+    def test_aggregation_clause_time_metadata_drives_measurement_time(self):
+        result = {
+            "schema_version": "2.0",
+            "original_input": "total data bundle revenue of a customer for the last 1 months",
+            "clauses": [
+                {
+                    "clause_id": "S1",
+                    "clause_type": "aggregation",
+                    "text": "total data bundle revenue",
+                    "agg_hint": "SUM",
+                    "kpi_text": "data bundle revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "S2",
+                    "clause_type": "aggregation",
+                    "text": "total data bundle revenue for the last 1 months",
+                    "agg_hint": "SUM",
+                    "kpi_text": "data bundle revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": 1,
+                    "time_unit": "MONTHS",
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "SUM",
+                "formula_type": "none",
+                "time_required": True,
+                "time_unit": "MONTHS",
+                "time_bound_style": "none",
+                "groupby_required": False,
+                "parameterized_window": False,
+                "has_count_constraint": False,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": None,
+            },
+        }
+
+        features = build_seed_features(result)
+
+        self.assertEqual(features["agg_type"], "SUM")
+        self.assertEqual(features["kpi_text"], "data bundle revenue")
+        self.assertEqual(features["time_unit"], "MONTHS")
+        self.assertEqual(features["time_n"], 1)
+        self.assertFalse(features["is_completed_period"])
+
+    def test_seed_intent_is_fallback_not_primary(self):
+        result = {
+            "schema_version": "2.0",
+            "original_input": "Find maximum data usage over a recent period",
+            "clauses": [
+                {
+                    "clause_id": "C1",
+                    "clause_type": "aggregation",
+                    "text": "maximum data usage",
+                    "agg_hint": "MAX",
+                    "kpi_text": "data usage",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C2",
+                    "clause_type": "time_window",
+                    "text": "over a recent period",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "SUM",
+                "formula_type": "none",
+                "time_required": True,
+                "time_unit": "DAYS",
+                "time_bound_style": "lower_only",
+                "groupby_required": True,
+                "parameterized_window": False,
+                "has_count_constraint": True,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": None,
+            },
+        }
+
+        features = build_seed_features(result)
+
+        self.assertEqual(features["agg_type"], "MAX")
+        self.assertEqual(features["time_unit"], "DAYS")
+        self.assertEqual(features["time_bound_style"], "lower_only")
+        self.assertTrue(features["needs_groupby"])
+        self.assertTrue(features["has_count_constraint"])
+
+    def test_seed_intent_parameterized_window_does_not_override_concrete_time(self):
+        result = {
+            "schema_version": "2.0",
+            "original_input": "check the total revenue for a subscriber last 30 days",
+            "clauses": [
+                {
+                    "clause_id": "C1",
+                    "clause_type": "aggregation",
+                    "text": "total revenue",
+                    "agg_hint": "SUM",
+                    "kpi_text": "total revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C2",
+                    "clause_type": "time_window",
+                    "text": "last 30 days",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": 30,
+                    "time_unit": "DAYS",
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "SUM",
+                "formula_type": "none",
+                "time_required": True,
+                "time_unit": "DAYS",
+                "time_bound_style": "lower_only",
+                "groupby_required": False,
+                "parameterized_window": True,
+                "has_count_constraint": False,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": None,
+            },
+        }
+
+        features = build_seed_features(result)
+
+        self.assertFalse(features["is_parameterized"])
+        self.assertEqual(features["time_n"], 30)
+        self.assertEqual(features["time_unit"], "DAYS")
+
+    def test_formula_time_clause_false_completed_period_is_normalized(self):
+        result = {
+            "schema_version": "2.0",
+            "original_input": "average weekly outgoing call revenue over the past 4 weeks",
+            "clauses": [
+                {
+                    "clause_id": "C1",
+                    "clause_type": "aggregation",
+                    "text": "average weekly outgoing call revenue",
+                    "agg_hint": "AVG",
+                    "kpi_text": "outgoing call revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C2",
+                    "clause_type": "formula",
+                    "text": "period length formula for 4 weeks",
+                    "agg_hint": "FORMULA",
+                    "kpi_text": "4 weeks period",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": 4,
+                    "time_unit": "WEEKS",
+                    "is_completed_period": True,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "FORMULA",
+                "formula_type": "average_over_period",
+                "time_required": True,
+                "time_unit": "WEEKS",
+                "time_bound_style": "none",
+                "groupby_required": False,
+                "parameterized_window": False,
+                "has_count_constraint": False,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": 4,
+            },
+        }
+
+        features = build_seed_features(result)
+
+        self.assertEqual(features["time_unit"], "WEEKS")
+        self.assertEqual(features["time_n"], 4)
+        self.assertFalse(features["is_completed_period"])
+        self.assertEqual(features["formula_type"], "average_over_period")
+
 
 if __name__ == "__main__":
     unittest.main()

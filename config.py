@@ -6,12 +6,30 @@ from openai import OpenAI
 
 load_dotenv()
 
+
+def normalize_decomposition_provider(provider: str | None) -> str:
+    return (
+        provider or "ollama"
+    ).strip().lower().replace("-", "").replace("_", "")
+
+
+def get_decomposition_api_key() -> str:
+    return (
+        os.getenv("DECOMPOSITION_API_KEY")
+        or os.getenv("DECOMPOSITION_APIKEY")
+        or "ollama"
+    )
+
+
 DATA_DIR = Path(os.getenv("VP_DATA_DIR", "./data"))
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").strip().lower()
 MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
 REASONING_EFFORT = os.getenv("REASONING_EFFORT", "medium")
 MAX_COMPLETION_TOKENS = int(os.getenv("MAX_COMPLETION_TOKENS", "4096"))
+DECOMPOSITION_LLM_PROVIDER = normalize_decomposition_provider(
+    os.getenv("DECOMPOSITION_LLM_PROVIDER")
+)
 DECOMPOSITION_MODEL = os.getenv("DECOMPOSITION_MODEL", "telecom-vp:3b")
 DECOMPOSITION_BASE_URL = os.getenv(
     "DECOMPOSITION_BASE_URL",
@@ -20,13 +38,14 @@ DECOMPOSITION_BASE_URL = os.getenv(
 DECOMPOSITION_MAX_TOKENS = int(
     os.getenv("DECOMPOSITION_MAX_TOKENS", "4096")
 )
+DECOMPOSITION_API_KEY = get_decomposition_api_key()
 OPENROUTER_REQUIRE_PARAMETERS = (
     os.getenv("OPENROUTER_REQUIRE_PARAMETERS", "false").strip().lower()
     in ("1", "true", "yes")
 )
 
-#VP_VERIFY_URL = "http://localhost:5678/webhook/VP_verify"
-VP_VERIFY_URL = "http://10.0.11.179:5678/webhook/VP_verify"
+VP_VERIFY_URL = "http://localhost:5678/webhook/VP_verify"
+#VP_VERIFY_URL = "http://10.0.11.179:5678/webhook/VP_verify"
 #
 
 if LLM_PROVIDER == "groq":
@@ -51,7 +70,7 @@ else:
     )
 
 decomposition_client = OpenAI(
-    api_key=os.getenv("DECOMPOSITION_API_KEY", "ollama"),
+    api_key=DECOMPOSITION_API_KEY,
     base_url=DECOMPOSITION_BASE_URL,
 )
 
@@ -90,7 +109,8 @@ print(
     f"Max completion tokens: {MAX_COMPLETION_TOKENS}"
 )
 print(
-    f"ollama decomposition client ready. Model: {DECOMPOSITION_MODEL}. "
+    f"{DECOMPOSITION_LLM_PROVIDER} decomposition client ready. "
+    f"Model: {DECOMPOSITION_MODEL}. "
     f"Base URL: {DECOMPOSITION_BASE_URL}. "
     f"Max tokens: {DECOMPOSITION_MAX_TOKENS}"
 )

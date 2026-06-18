@@ -4,10 +4,214 @@ from json import JSONDecodeError
 from langsmith import traceable
 
 from config import (
+    DECOMPOSITION_LLM_PROVIDER,
     DECOMPOSITION_MODEL,
     decomposition_chat_completion_options,
     decomposition_client,
 )
+
+CLAUSE_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "clause_id": {
+            "type": "string",
+            "description": "Short id like C1, C2, C3",
+        },
+        "clause_type": {
+            "type": "string",
+            "enum": [
+                "aggregation",
+                "time_window",
+                "attribute_filter",
+                "duration_threshold",
+                "count_constraint",
+                "formula",
+                "unknown",
+            ],
+        },
+        "text": {
+            "type": "string",
+            "description": "Exact or near-exact natural language span from the input",
+        },
+        "agg_hint": {
+            "type": ["string", "null"],
+            "enum": [
+                "SUM",
+                "MAX",
+                "MIN",
+                "AVG",
+                "COUNT_ALL",
+                "RAW",
+                "FORMULA",
+                "UNKNOWN",
+                None,
+            ],
+        },
+        "kpi_text": {
+            "type": ["string", "null"],
+            "description": "The KPI/business metric phrase, if this clause has one",
+        },
+        "operator_hint": {
+            "type": ["string", "null"],
+            "description": "Possible operator from the sentence, e.g. =, >, <, IN_LIST",
+        },
+        "values": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Values mentioned in this clause, e.g. smartphone, iPhone, prepaid",
+        },
+        "time_n": {
+            "type": ["integer", "string", "null"],
+            "description": "Numeric time value, e.g. 3 for last 3 months, or parameterized value",
+        },
+        "time_unit": {
+            "type": ["string", "null"],
+            "enum": [
+                "DAYS",
+                "WEEKS",
+                "MONTHS",
+                "HOURS",
+                "UNKNOWN",
+                None,
+            ],
+        },
+        "is_completed_period": {
+            "type": ["boolean", "null"],
+            "description": "True only for phrases like last 2 completed months",
+        },
+        "notes": {
+            "type": "string",
+        },
+    },
+    "required": [
+        "clause_id",
+        "clause_type",
+        "text",
+        "agg_hint",
+        "kpi_text",
+        "operator_hint",
+        "values",
+        "time_n",
+        "time_unit",
+        "is_completed_period",
+        "notes",
+    ],
+}
+
+
+SEED_INTENT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "agg_type": {
+            "type": ["string", "null"],
+            "enum": [
+                "SUM",
+                "MAX",
+                "MIN",
+                "AVG",
+                "COUNT_ALL",
+                "RAW",
+                "FORMULA",
+                "UNKNOWN",
+                None,
+            ],
+        },
+        "formula_type": {
+            "type": ["string", "null"],
+            "enum": [
+                "none",
+                "average_over_period",
+                "percentage_of_kpi",
+                "addition",
+                "identity_conversion",
+                "percentage",
+                "other",
+                None,
+            ],
+        },
+        "time_required": {"type": ["boolean", "null"]},
+        "time_unit": {
+            "type": ["string", "null"],
+            "enum": [
+                "DAYS",
+                "WEEKS",
+                "MONTHS",
+                "HOURS",
+                "UNKNOWN",
+                None,
+            ],
+        },
+        "time_bound_style": {
+            "type": ["string", "null"],
+            "enum": [
+                "none",
+                "equality",
+                "lower_only",
+                "bounded",
+                "upper_only",
+                "exact",
+                "lmtd",
+                "current_or_previous",
+                "custom",
+                "unknown",
+                None,
+            ],
+        },
+        "groupby_required": {"type": ["boolean", "null"]},
+        "parameterized_window": {"type": ["boolean", "null"]},
+        "has_count_constraint": {"type": ["boolean", "null"]},
+        "presence_mode": {
+            "type": ["string", "null"],
+            "enum": [
+                "none",
+                "present",
+                "absent",
+                "unknown",
+                None,
+            ],
+        },
+        "entity_mode": {
+            "type": ["string", "null"],
+            "enum": [
+                "ordinary_kpi",
+                "customer_count",
+                "product_presence",
+                "campaign_presence",
+                "filtered_count",
+                "dynamic_filter_fixed_count",
+                "precomputed_kpi",
+                "unknown",
+                None,
+            ],
+        },
+    },
+    "required": [
+        "agg_type",
+        "formula_type",
+        "time_required",
+        "time_unit",
+        "time_bound_style",
+        "groupby_required",
+        "parameterized_window",
+        "has_count_constraint",
+        "presence_mode",
+        "entity_mode",
+    ],
+}
+
+
+FORMULA_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "factor": {"type": ["number", "null"]},
+        "divisor": {"type": ["number", "null"]},
+    },
+    "required": ["factor", "divisor"],
+}
+
 
 decomposition_schema = {
     "name": "vp_decomposition",
@@ -16,247 +220,196 @@ decomposition_schema = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
+            "schema_version": {
+                "type": "string",
+                "enum": ["2.0"],
+            },
             "original_input": {
-                "type": "string"
+                "type": "string",
             },
             "clauses": {
                 "type": "array",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "properties": {
-                        "clause_id": {
-                            "type": "string",
-                            "description": "Short id like C1, C2, C3"
-                        },
-                        "clause_type": {
-                            "type": "string",
-                            "enum": [
-                                "aggregation",
-                                "time_window",
-                                "attribute_filter",
-                                "duration_threshold",
-                                "count_constraint",
-                                "formula",
-                                "unknown"
-                            ]
-                        },
-                        "text": {
-                            "type": "string",
-                            "description": "Exact or near-exact natural language span from the input"
-                        },
-                        "agg_hint": {
-                            "type": ["string", "null"],
-                            "enum": [
-                                "SUM",
-                                "MAX",
-                                "MIN",
-                                "AVG",
-                                "COUNT_ALL",
-                                "RAW",
-                                "FORMULA",
-                                "UNKNOWN",
-                                None
-                            ]
-                        },
-                        "kpi_text": {
-                            "type": ["string", "null"],
-                            "description": "The KPI/business metric phrase, if this clause has one"
-                        },
-                        "operator_hint": {
-                            "type": ["string", "null"],
-                            "description": "Possible operator from the sentence, e.g. =, >, <, IN_LIST"
-                        },
-                        "values": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "Values mentioned in this clause, e.g. smartphone, iPhone, prepaid"
-                        },
-                        "time_n": {
-                            "type": ["integer", "null"],
-                            "description": "Numeric time value, e.g. 3 for last 3 months"
-                        },
-                        "time_unit": {
-                            "type": ["string", "null"],
-                            "enum": [
-                                "DAYS",
-                                "WEEKS",
-                                "MONTHS",
-                                "HOURS",
-                                "UNKNOWN",
-                                None
-                            ]
-                        },
-                        "is_completed_period": {
-                            "type": ["boolean", "null"],
-                            "description": "True only for phrases like last 2 completed months"
-                        },
-                        "notes": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "clause_id",
-                        "clause_type",
-                        "text",
-                        "agg_hint",
-                        "kpi_text",
-                        "operator_hint",
-                        "values",
-                        "time_n",
-                        "time_unit",
-                        "is_completed_period",
-                        "notes"
-                    ]
-                }
-            }
+                "items": CLAUSE_SCHEMA,
+            },
+            "seed_intent": SEED_INTENT_SCHEMA,
+            "formula": FORMULA_SCHEMA,
         },
-        "required": ["original_input", "clauses"]
-    }
+        "required": [
+            "schema_version",
+            "original_input",
+            "clauses",
+            "seed_intent",
+            "formula",
+        ],
+    },
 }
 
 
-SYSTEM_PROMPT = """
-You are a decomposition engine for telecom VP parent-condition generation.
+OLLAMA_FINE_TUNED_SYSTEM_PROMPT = "You are a telecom VP request decomposition engine. Return only JSON matching schema version 2.0."
 
-Your job is ONLY to split the user's natural language input into semantic clauses.
-Do NOT convert to database column names.
-Do NOT create final parent conditions.
-Do NOT resolve KPI columns.
-Do NOT invent missing values.
 
-Clause types:
+GENERAL_DECOMPOSITION_SYSTEM_PROMPT = """
+You are a telecom VP request decomposition engine.
 
-1. aggregation
-   The main measurable KPI or metric.
-   Examples:
-   - total revenue from free data usage
-   - maximum data usage
-   - number of recharge transactions
-   - average weekly outgoing call revenue
+Your job is to decompose the user's natural-language telecom VP request into
+structured semantic clauses and seed-selection intent.
 
-2. time_window
-   A time range for event/usage/revenue measurement.
-   Examples:
-   - in the last 3 months
-   - over last 2 days
-   - in the past 4 weeks
-   - last 2 completed months
-
-3. attribute_filter
-   A filter on subscriber/customer/product/category attributes.
-   Examples:
-   - smartphone users
-   - smartphone or iPhone users
-   - prepaid recharges
-   - active or inactive subscribers
-   - Indian iPhone users
-   - product '123' or product '125'
-
-4. duration_threshold
-   Tenure or active-on-network conditions.
-   Examples:
-   - active for more than 35 days
-   - age on network greater than 50
-   - active for more than 3 months
-
-5. count_constraint
-   A fixed count condition in addition to the main aggregation.
-   Example:
-   - where count of bundled SMS equals 2
-
-6. formula
-   A calculated metric.
-   Examples:
-   - calculated 20% of recharge amount
-   - average weekly revenue over 4 weeks
-
-Important rules:
-- Keep attribute filters separate from aggregation.
-- "smartphone users" is an attribute_filter, not part of the KPI.
-- "iPhone users" is an attribute_filter, not part of the KPI.
-- "last 3 months" is a time_window.
-- "active for more than 35 days" is a duration_threshold.
-- For normal rolling day/week windows like "last 90 days", "past 30 days",
-  "over the last 2 weeks", set is_completed_period=false. Set it true only
-  when the user explicitly says completed, previous complete, excluding today,
-  excluding current day/week, or similar cutoff language.
-- "average revenue" may be aggregation with agg_hint AVG unless it clearly describes a formula.
-- For percentage formulas shaped like "N% of <metric phrase>", set kpi_text to
-  the metric phrase after "of". Do not include comparison or threshold words in
-  kpi_text.
-- "number of customers" or "number of transactions" usually means COUNT_ALL.
-- "total" usually means SUM.
-- "maximum" usually means MAX.
-- Return only JSON matching the schema.
-
-More strict rules:
-
-- For clause_type other than aggregation or formula, agg_hint must be null.
-- For attribute_filter clauses, extract clean values only.
-  Example:
-  "prepaid recharges" -> values ["prepaid"]
-  "postpaid recharges" -> values ["postpaid"]
-  "smartphone subscribers" -> values ["smartphone"]
-  "smartphone or iPhone users" -> values ["smartphone", "iPhone"]
-
-- If a phrase contains both KPI and filter words, split them.
-  Example:
-  "Total revenue from outgoing on-net SMS for prepaid recharges"
-  should become:
-    aggregation text: "Total revenue from outgoing on-net SMS"
-    attribute_filter text: "prepaid recharges"
-    attribute_filter values: ["prepaid"]
-
-- Do not put filter words inside kpi_text unless they are truly part of the KPI name.
-  "prepaid SMS revenue" may be KPI text.
-  "SMS revenue for prepaid recharges" should split prepaid as a filter.
-
-- For duration_threshold, use time_n and time_unit for the duration value, but do not treat it as a measurement time window.
-  Example:
-  "active for more than 65 days" -> duration_threshold, time_n=65, time_unit="DAYS"
-
-- For count_constraint, include both the counted thing and the fixed number in values.
-  Example:
-  "count of bundled SMS equals 2" -> values ["bundled SMS", "2"], operator_hint "="
-  Generic attribute filter rule:
-
-- For attribute filters, extract the natural-language filter phrase and the explicit values mentioned.
-- Do not decide database column names.
-- If multiple values are mentioned, keep them in the values list.
-- The Python resolver will later decide whether those values belong to one column or multiple columns.
-- If the user says "any X", "specific X", "selected X", or "particular X" without
-  giving concrete values, keep it as an attribute_filter with the natural phrase
-  in text and an empty values list. Do not invent values.
-  Example:
-  "any products" -> attribute_filter text "any products", values []
-  "specific campaigns" -> attribute_filter text "specific campaigns", values []
-- If such a dynamic filter is combined with a fixed count threshold, keep the
-  threshold as a count_constraint.
-  Example:
-  "any products more than three times" ->
-    attribute_filter text "any products", values []
-    count_constraint text "more than three times", values ["products", "3"], operator_hint ">"
-
-Examples:
-"smartphone or iPhone users" -> values ["smartphone", "iPhone"]
-"Indian iPhone users" -> values ["Indian", "iPhone"]
-"prepaid smartphone users" -> values ["prepaid", "smartphone"]
-
-Implicit aggregation inference:
-- If the entire input contains ONLY attribute filters (e.g. "prepaid customers",
-  "postpaid subscribers", "4G users") with no aggregation verb, count, time,
-  or formula language, emit a synthetic aggregation clause:
-    clause_type: aggregation
-    agg_hint: COUNT_ALL
-    kpi_text: "customers"
-  Rationale: VP rule engine requires an aggregation; pure attribute filters imply a
-  filtered customer presence check.
+Return only one JSON object matching schema version 2.0.
+Do not return markdown, prose, explanations, comments, or a top-level array.
 
 Output shape:
-- Return a single JSON object with keys original_input and clauses.
-- Do not return a top-level array.
-"""
+{
+  "schema_version": "2.0",
+  "original_input": "<exact user input>",
+  "clauses": [],
+  "seed_intent": {},
+  "formula": {}
+}
+
+Clause types:
+- aggregation: the main measurable KPI or metric.
+- time_window: event, usage, revenue, recharge, subscription, or campaign measurement time range.
+- attribute_filter: customer, subscriber, product, device, status, nationality, recharge, or line-type filters.
+- duration_threshold: tenure, AON, active-on-network, network-age, or activation-age conditions.
+- count_constraint: fixed count conditions in addition to the main aggregation.
+- formula: calculated metric such as percentage-of-KPI or average-over-period.
+- unknown: only when no other type fits.
+
+Each clause must contain:
+{
+  "clause_id": "C1",
+  "clause_type": "aggregation | time_window | attribute_filter | duration_threshold | count_constraint | formula | unknown",
+  "text": "<natural-language span>",
+  "agg_hint": "SUM | MAX | MIN | AVG | COUNT_ALL | RAW | FORMULA | UNKNOWN | null",
+  "kpi_text": "<metric phrase or null>",
+  "operator_hint": "<operator or null>",
+  "values": [],
+  "time_n": null,
+  "time_unit": "DAYS | WEEKS | MONTHS | HOURS | UNKNOWN | null",
+  "is_completed_period": false,
+  "notes": ""
+}
+
+Splitting rules:
+- Keep KPI, time, filters, duration thresholds, count constraints, and formulas in separate clauses.
+- Do not put time phrases inside aggregation text or kpi_text.
+- Do not put filters inside kpi_text unless they are truly part of the KPI name.
+- Do not emit empty count_constraint or formula clauses.
+- "smartphone users", "iPhone users", "Indian users", "prepaid customers", and "active subscribers" are attribute_filter clauses.
+- "last 2 days", "past 4 weeks", "last 3 months", and "current month till date" are time_window clauses.
+- "more than 65 active days", "network age greater than 50 days", and "on the network for more than 35 days" are duration_threshold clauses.
+- Product IDs such as product 123 or 125 must be attribute_filter clauses with values ["123", "125"].
+- For "active or inactive", use one attribute_filter with values ["active", "inactive"].
+- For "smartphone or iPhone", use one attribute_filter with values ["smartphone", "iPhone"].
+
+Aggregation rules:
+- "total", "revenue", "usage", and "amount" usually imply SUM.
+- "maximum", "highest", and "max" imply MAX.
+- "minimum", "lowest", and "min" imply MIN.
+- "average" and "avg" imply AVG unless the request asks for average over a period; then use formula intent.
+- "number of", "count of", and "how many" imply COUNT_ALL.
+- For pure filter requests like "prepaid customers", emit COUNT_ALL customers plus the filter.
+
+Time rules:
+- Rolling days: "last N days", "past N days", "over last N days" -> time_n=N, time_unit="DAYS", is_completed_period=false.
+- Rolling weeks: "last N weeks", "past N weeks", "over last N weeks" -> time_n=N, time_unit="WEEKS", is_completed_period=false.
+- Month windows:
+  - "last N months", "past N months", "over last N months" -> time_n=N, time_unit="MONTHS".
+  - "last month", "past month", "last one month" -> time_n=1, time_unit="MONTHS".
+  - "month till date", "MTD", "current month till date" -> time_window with text preserving MTD meaning.
+- Set is_completed_period=true only if the user explicitly says completed, previous complete, full month/week, excluding current period, or excluding today.
+
+Formula rules:
+- "20% of recharge amount" -> formula clause with agg_hint="FORMULA", kpi_text="recharge amount", formula.factor=0.2, seed_intent.formula_type="percentage_of_kpi".
+- Average daily, weekly, or monthly over a period -> average-over-period formula intent, seed_intent.agg_type="FORMULA", seed_intent.formula_type="average_over_period".
+- formula.divisor should equal the period count when explicit.
+- Do not emit empty formula clauses.
+
+seed_intent must contain:
+{
+  "agg_type": "SUM | MAX | MIN | AVG | COUNT_ALL | RAW | FORMULA | UNKNOWN | null",
+  "formula_type": "none | average_over_period | percentage_of_kpi | addition | identity_conversion | percentage | other | null",
+  "time_required": true,
+  "time_unit": "DAYS | WEEKS | MONTHS | HOURS | UNKNOWN | null",
+  "time_bound_style": "none | equality | lower_only | bounded | upper_only | exact | lmtd | current_or_previous | custom | unknown | null",
+  "groupby_required": false,
+  "parameterized_window": false,
+  "has_count_constraint": false,
+  "presence_mode": "none | present | absent | unknown | null",
+  "entity_mode": "ordinary_kpi | customer_count | product_presence | campaign_presence | filtered_count | dynamic_filter_fixed_count | precomputed_kpi | unknown | null"
+}
+
+formula must contain:
+{
+  "factor": null,
+  "divisor": null
+}
+
+Example:
+Input: Total data usage over the last 2 days
+Output:
+{
+  "schema_version": "2.0",
+  "original_input": "Total data usage over the last 2 days",
+  "clauses": [
+    {
+      "clause_id": "C1",
+      "clause_type": "aggregation",
+      "text": "Total data usage",
+      "agg_hint": "SUM",
+      "kpi_text": "data usage",
+      "operator_hint": null,
+      "values": [],
+      "time_n": null,
+      "time_unit": null,
+      "is_completed_period": null,
+      "notes": ""
+    },
+    {
+      "clause_id": "C2",
+      "clause_type": "time_window",
+      "text": "over the last 2 days",
+      "agg_hint": null,
+      "kpi_text": null,
+      "operator_hint": null,
+      "values": [],
+      "time_n": 2,
+      "time_unit": "DAYS",
+      "is_completed_period": false,
+      "notes": ""
+    }
+  ],
+  "seed_intent": {
+    "agg_type": "SUM",
+    "formula_type": "none",
+    "time_required": true,
+    "time_unit": "DAYS",
+    "time_bound_style": "lower_only",
+    "groupby_required": false,
+    "parameterized_window": false,
+    "has_count_constraint": false,
+    "presence_mode": "none",
+    "entity_mode": "ordinary_kpi"
+  },
+  "formula": {
+    "factor": null,
+    "divisor": null
+  }
+}
+""".strip()
+
+
+GENERAL_DECOMPOSITION_PROVIDERS = {"freellmapi", "openrouter"}
+
+
+def select_decomposition_system_prompt(provider: str | None) -> str:
+    normalized_provider = (provider or "ollama").strip().lower().replace("-", "").replace("_", "")
+    if normalized_provider in GENERAL_DECOMPOSITION_PROVIDERS:
+        return GENERAL_DECOMPOSITION_SYSTEM_PROMPT
+    return OLLAMA_FINE_TUNED_SYSTEM_PROMPT
+
+
+SYSTEM_PROMPT = select_decomposition_system_prompt(DECOMPOSITION_LLM_PROVIDER)
 
 
 class DecompositionError(ValueError):
@@ -350,9 +503,9 @@ def _parse_or_repair_decomposition(messages: list[dict], user_input: str) -> dic
                     "content": (
                         "Your previous response was not valid JSON for the required schema. "
                         "Return ONLY one complete, parseable JSON object with keys "
-                        "'original_input' and 'clauses'. Do not include markdown, prose, "
-                        "or a top-level array. Make sure every string is properly closed "
-                        "and escaped.\n\n"
+                        "'schema_version', 'original_input', 'clauses', 'seed_intent', "
+                        "and 'formula'. Do not include markdown, prose, or a top-level "
+                        "array. Make sure every string is properly closed and escaped.\n\n"
                         "Invalid response preview:\n"
                         f"{_preview_content(content)}"
                     ),
@@ -369,7 +522,7 @@ def _parse_or_repair_decomposition(messages: list[dict], user_input: str) -> dic
 @traceable(
     run_type="llm",
     name="decompose_vp_input",
-    metadata={"provider": "ollama", "model": DECOMPOSITION_MODEL},
+    metadata={"provider": DECOMPOSITION_LLM_PROVIDER, "model": DECOMPOSITION_MODEL},
 )
 def decompose_vp_input(user_input: str) -> dict:
     return _parse_or_repair_decomposition(

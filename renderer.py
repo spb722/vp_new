@@ -37,6 +37,15 @@ def infer_date_col(kpi_mapping: dict, features: dict) -> str:
     return "COMMON_FCT_DT"
 
 
+def resolve_date_col(kpi_mapping: dict, features: dict) -> str:
+    date_column = kpi_mapping.get("date_column")
+
+    if isinstance(date_column, str) and date_column.strip():
+        return date_column.strip()
+
+    return infer_date_col(kpi_mapping, features)
+
+
 def resolve_groupby_col(features: dict) -> str | None:
     groupby_text = features.get("groupby_text")
 
@@ -214,7 +223,7 @@ def render_seed_template(seed: dict, features: dict, kpi_mapping: dict) -> str:
         }
 
     kpi_col = kpi_mapping.get("kpi_col")
-    date_col = infer_date_col(kpi_mapping, features)
+    date_col = resolve_date_col(kpi_mapping, features)
 
     # Special campaign override
     if features.get("campaign_presence"):

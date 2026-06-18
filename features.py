@@ -208,6 +208,23 @@ def remove_generic_subject_filters(attribute_filters: list) -> list:
     ]
 
 
+def find_measurement_time_clause(
+    time_clauses: list,
+    aggregation_clauses: list,
+    formula_clauses: list,
+) -> dict | None:
+    """
+    Prefer a dedicated time_window clause, but tolerate decompositions that
+    attach time metadata to the measurable clause itself.
+    """
+
+    for clause in time_clauses + aggregation_clauses + formula_clauses:
+        if clause.get("time_unit") is not None or clause.get("time_n") is not None:
+            return clause
+
+    return None
+
+
 def classify_month_window_for_features(original_input: str, decomposition: dict) -> dict:
     try:
         from month_classifier import classify_month_window
@@ -550,6 +567,32 @@ def get_clauses(result: dict, clause_type: str) -> list:
     ]
 
 
+def get_seed_intent(result: dict) -> dict:
+    seed_intent = result.get("seed_intent")
+    if isinstance(seed_intent, dict):
+        return seed_intent
+    return {}
+
+
+def has_usable_value(value) -> bool:
+    return value is not None and value != "UNKNOWN"
+
+
+def fallback_from_seed_intent(current_value, seed_intent: dict, key: str):
+    if has_usable_value(current_value):
+        return current_value
+
+    intent_value = seed_intent.get(key)
+    if has_usable_value(intent_value):
+        return intent_value
+
+    return current_value
+
+
+def truthy_seed_intent_flag(seed_intent: dict, key: str) -> bool:
+    return seed_intent.get(key) is True
+
+
 @traceable(name="build_seed_features")
 def build_seed_features(result: dict) -> dict:
     """
@@ -565,6 +608,7 @@ def build_seed_features(result: dict) -> dict:
     """
 
     result = normalize_decomposition(result)
+    seed_intent = get_seed_intent(result)
 
     original_input = result.get("original_input", "")
 
@@ -618,17 +662,41 @@ def build_seed_features(result: dict) -> dict:
         agg_type = None
         kpi_text = None
 
-    # Pick measurement time window
-    if time_clauses:
-        time_clause = time_clauses[0]
+    agg_type = fallback_from_seed_intent(agg_type, seed_intent, "agg_type")
+
+    # Pick measurement time window. Prefer a dedicated time_window clause, but
+    # some decompositions attach time metadata to aggregation/formula clauses.
+    time_clause = find_measurement_time_clause(
+        time_clauses=time_clauses,
+        aggregation_clauses=aggregation_clauses,
+        formula_clauses=formula_clauses,
+    )
+
+    if time_clause:
         time_unit = time_clause.get("time_unit")
         time_n = time_clause.get("time_n")
         is_completed_period = time_clause.get("is_completed_period", False)
+        if time_clause.get("clause_type") != "time_window" and is_completed_period:
+            time_text = " ".join(
+                str(part)
+                for part in [
+                    time_clause.get("text"),
+                    time_clause.get("notes"),
+                ]
+                if part
+            ).lower()
+            if not re.search(r"\b(completed|excluding|exclude|previous complete)\b", time_text):
+                is_completed_period = False
     else:
-        time_clause = None
         time_unit = None
         time_n = None
         is_completed_period = False
+
+    time_unit = fallback_from_seed_intent(time_unit, seed_intent, "time_unit")
+    time_bound_style = seed_intent.get("time_bound_style")
+    if time_bound_style in ("unknown", "none"):
+        time_bound_style = None
+
     month_window = None
     month_window_style = None
     month_window_classifier_error = None
@@ -671,12 +739,25 @@ def build_seed_features(result: dict) -> dict:
         has_formula = True
         formula_type = "percentage_of_kpi"
 
+    intent_formula_type = seed_intent.get("formula_type")
+    if not formula_type and intent_formula_type not in (None, "none", "unknown"):
+        formula_type = intent_formula_type
+
+    if formula_type:
+        has_formula = True
+        if not has_usable_value(agg_type):
+            agg_type = "FORMULA"
+
     # Count constraint detection
     has_count_constraint = bool(count_constraints)
+    if not has_count_constraint and truthy_seed_intent_flag(seed_intent, "has_count_constraint"):
+        has_count_constraint = True
 
     # Groupby detection
     groupby_text = detect_groupby_text(original_input)
     needs_groupby = groupby_text is not None
+    if not needs_groupby and truthy_seed_intent_flag(seed_intent, "groupby_required"):
+        needs_groupby = True
 
     # Campaign presence/absence
     campaign_presence = detect_campaign_presence(original_input)
@@ -779,6 +860,7 @@ def build_seed_features(result: dict) -> dict:
         "time_unit": time_unit,
         "time_n": time_n,
         "is_completed_period": is_completed_period,
+        "time_bound_style": time_bound_style,
         "month_window_style": month_window_style,
         "month_window": month_window,
         "month_window_classifier_error": month_window_classifier_error,
@@ -792,6 +874,10 @@ def build_seed_features(result: dict) -> dict:
         "percentage_factor": percentage_factor,
 
         "has_count_constraint": has_count_constraint,
+        "presence_mode": seed_intent.get("presence_mode"),
+        "entity_mode": seed_intent.get("entity_mode"),
+        "seed_intent": seed_intent,
+        "formula": result.get("formula"),
 
         "campaign_presence": campaign_presence,
         "product_presence": product_presence,

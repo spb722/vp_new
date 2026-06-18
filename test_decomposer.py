@@ -3,10 +3,13 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import jsonschema
+
 os.environ.setdefault("LLM_PROVIDER", "groq")
 os.environ.setdefault("GROQ_API_KEY", "test-key")
 os.environ.setdefault("LANGSMITH_TRACING", "false")
 
+import config
 import decomposer
 from decomposer import DecompositionError, decompose_vp_input, parse_decomposition_content
 
@@ -52,6 +55,114 @@ class FakeClient:
 
 
 class DecomposerTests(unittest.TestCase):
+    def test_ollama_prompt_matches_v2_training_prompt_exactly(self):
+        self.assertEqual(
+            decomposer.OLLAMA_FINE_TUNED_SYSTEM_PROMPT,
+            "You are a telecom VP request decomposition engine. Return only JSON matching schema version 2.0.",
+        )
+
+    def test_default_decomposition_provider_uses_ollama_prompt(self):
+        self.assertEqual(
+            decomposer.select_decomposition_system_prompt(None),
+            decomposer.OLLAMA_FINE_TUNED_SYSTEM_PROMPT,
+        )
+
+    def test_freellmapi_uses_detailed_general_prompt(self):
+        prompt = decomposer.select_decomposition_system_prompt("free-llm-api")
+
+        self.assertEqual(
+            prompt,
+            decomposer.GENERAL_DECOMPOSITION_SYSTEM_PROMPT,
+        )
+        self.assertIn("Splitting rules:", prompt)
+        self.assertIn('"schema_version": "2.0"', prompt)
+        self.assertIn("attribute_filter", prompt)
+        self.assertIn("time_window", prompt)
+
+    def test_openrouter_uses_detailed_general_prompt(self):
+        self.assertEqual(
+            decomposer.select_decomposition_system_prompt("openrouter"),
+            decomposer.GENERAL_DECOMPOSITION_SYSTEM_PROMPT,
+        )
+
+    def test_decomposition_apikey_fallback_is_supported(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DECOMPOSITION_API_KEY": "",
+                "DECOMPOSITION_APIKEY": "legacy-decomposition-key",
+            },
+        ):
+            self.assertEqual(
+                config.get_decomposition_api_key(),
+                "legacy-decomposition-key",
+            )
+
+    def test_decomposition_schema_accepts_v2_response_shape(self):
+        payload = {
+            "schema_version": "2.0",
+            "original_input": "Show total revenue over the last 2 days",
+            "clauses": [
+                {
+                    "clause_id": "C1",
+                    "clause_type": "aggregation",
+                    "text": "total revenue",
+                    "agg_hint": "SUM",
+                    "kpi_text": "revenue",
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C2",
+                    "clause_type": "time_window",
+                    "text": "over the last 2 days",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": None,
+                    "values": [],
+                    "time_n": 2,
+                    "time_unit": "DAYS",
+                    "is_completed_period": False,
+                    "notes": "",
+                },
+                {
+                    "clause_id": "C3",
+                    "clause_type": "attribute_filter",
+                    "text": "prepaid users",
+                    "agg_hint": None,
+                    "kpi_text": None,
+                    "operator_hint": "=",
+                    "values": ["prepaid"],
+                    "time_n": None,
+                    "time_unit": None,
+                    "is_completed_period": None,
+                    "notes": "",
+                },
+            ],
+            "seed_intent": {
+                "agg_type": "SUM",
+                "formula_type": "none",
+                "time_required": True,
+                "time_unit": "DAYS",
+                "time_bound_style": "lower_only",
+                "groupby_required": False,
+                "parameterized_window": False,
+                "has_count_constraint": False,
+                "presence_mode": "none",
+                "entity_mode": "ordinary_kpi",
+            },
+            "formula": {
+                "factor": None,
+                "divisor": None,
+            },
+        }
+
+        jsonschema.validate(payload, decomposer.decomposition_schema["schema"])
+
     def test_parse_wraps_top_level_clause_list(self):
         result = parse_decomposition_content(
             '[{"clause_id": "C1", "clause_type": "aggregation"}]',
@@ -77,10 +188,12 @@ class DecomposerTests(unittest.TestCase):
             fake_client.chat.completions.calls[0]["model"],
             decomposer.DECOMPOSITION_MODEL,
         )
+        self.assertEqual(fake_client.chat.completions.calls[0]["temperature"], 0)
         self.assertIn("max_tokens", fake_client.chat.completions.calls[0])
         self.assertNotIn("max_completion_tokens", fake_client.chat.completions.calls[0])
         retry_messages = fake_client.chat.completions.calls[1]["messages"]
         self.assertIn("not valid JSON", retry_messages[-1]["content"])
+        self.assertIn("schema_version", retry_messages[-1]["content"])
 
     def test_decompose_raises_after_failed_repair(self):
         fake_client = FakeClient([

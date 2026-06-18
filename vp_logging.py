@@ -2,6 +2,7 @@ from pprint import pformat
 
 from config import (
     DECOMPOSITION_BASE_URL,
+    DECOMPOSITION_LLM_PROVIDER,
     DECOMPOSITION_MODEL,
     LLM_PROVIDER,
     MODEL,
@@ -280,7 +281,7 @@ def print_vp_resolve_log(request, result: dict) -> None:
 
     print("\nProviders:")
     print(
-        "  decomposition: ollama "
+        f"  decomposition: {DECOMPOSITION_LLM_PROVIDER} "
         f"| model={DECOMPOSITION_MODEL} | base_url={DECOMPOSITION_BASE_URL}"
     )
     print(

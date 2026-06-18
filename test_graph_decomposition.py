@@ -66,6 +66,26 @@ class GraphDecompositionTests(unittest.TestCase):
         self.assertIn("smartphone users", result["columns_error"])
         self.assertNotIn("resolving kpi_text", result["columns_error"])
 
+    def test_validate_output_rejects_uppercase_structural_placeholder(self):
+        result = graph.validate_output(
+            {
+                "final_parent_condition": (
+                    "COMMON_FCT_DT >= CurrentMonth-{N}MONTHS "
+                    "AND SUM(Total_Data_Revenue) ${operator} ${value}"
+                ),
+                "kpi_mapping": {"kpi_col": "Total_Data_Revenue"},
+                "selected_seed": {"seed_id": "S13_last_n_months_bounded"},
+                "seed_candidates": [{"score": 132}],
+                "trajectory": [],
+            }
+        )
+
+        self.assertFalse(result["validation_result"]["valid"])
+        self.assertIn(
+            "Unresolved placeholders: ['{N}']",
+            result["validation_result"]["errors"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
