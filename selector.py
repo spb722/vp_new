@@ -358,7 +358,7 @@ def hard_reject_seed(seed: dict, features: dict) -> list:
         reasons.append("seed is filtered_count but input is not filtered_count")
 
     # 9. Product presence must use product presence seed
-    if features.get("product_presence"):
+    if features.get("product_presence") and not features.get("product_presence_as_filter"):
         if "{list_values}" not in template:
             reasons.append("product_presence requires a list_values seed")
     else:
@@ -420,6 +420,32 @@ def hard_reject_seed(seed: dict, features: dict) -> list:
         reasons.append(
             "seed requires internal filter placeholder but input does not mention DPI/protocol/app filter"
         )
+
+    absence_words = [
+        "absent",
+        "did not",
+        "didn't",
+        "not received",
+        "not receive",
+        "never",
+        "missing",
+        "zero",
+        "no ",
+    ]
+    presence_words = [
+        "received",
+        "present",
+        "at least once",
+        "has",
+        "have",
+        "purchased",
+        "bought",
+        "subscribed",
+    ]
+    if "COUNT_ALL({key_col}) = 0" in template and not any(word in combined_text for word in absence_words):
+        reasons.append("absence count seed requires explicit absence wording")
+    if "COUNT_ALL({key_col}) > 0" in template and not any(word in combined_text for word in presence_words):
+        reasons.append("presence count seed requires explicit presence wording")
 
     # 10. Reject promo-relative date seeds unless input says promo/campaign-relative timing
     if "$L_PROMO_SENT_DATE" in template:

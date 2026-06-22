@@ -1,0 +1,353 @@
+{
+  "summary": {
+    "total": 31,
+    "ok": 26,
+    "failed": 5,
+    "ok_missing_time_bound": [
+      17
+    ]
+  },
+  "results": [
+    {
+      "case": 1,
+      "input": "Total revenue from finance voice services for usage recorded last 1 months",
+      "http_status": 200,
+      "elapsed_s": 2.03,
+      "ok": true,
+      "selected_seed_id": "S164_raw_kpi_months_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentMonth-1MONTHS AND Total_Voice_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 2,
+      "input": "check the total revenue for a subscriber last 30 days",
+      "http_status": 200,
+      "elapsed_s": 1.31,
+      "ok": true,
+      "selected_seed_id": "S162_raw_kpi_days_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentTime-30DAYS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 3,
+      "input": "total data bundle revenue of a customer for the last 1 months",
+      "http_status": 200,
+      "elapsed_s": 1.59,
+      "ok": true,
+      "selected_seed_id": "S164_raw_kpi_months_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Data_Bundle_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 4,
+      "input": "To check the average revenue from all international outgoing calls over last 4 weeks",
+      "http_status": 200,
+      "elapsed_s": 36.17,
+      "ok": true,
+      "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 5,
+      "input": "total data usage among smartphone subscribers who are currently active and have been on the network for more than 65 days over the past 3 months",
+      "http_status": 200,
+      "elapsed_s": 149.43,
+      "ok": true,
+      "selected_seed_id": "S134_last_n_months_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND CUST_360_AGE > 65 AND COMMON_FCT_DT >= CurrentMonth-3MONTHS AND SUM(Total_Data_usage) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 6,
+      "input": "Total pay-as-you-go data used on the local network by smartphone users over last 3 months",
+      "http_status": 200,
+      "elapsed_s": 52.76,
+      "ok": true,
+      "selected_seed_id": "S134_last_n_months_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Model = smartphone AND COMMON_Event_Date >= CurrentMonth-3MONTHS AND SUM(COMMON_Data_PayG_Volume) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 7,
+      "input": "To check 20% of recharge amount of the prepaid subscribers in the last 2 months",
+      "http_status": 200,
+      "elapsed_s": 80.21,
+      "ok": true,
+      "selected_seed_id": "S160_percentage_of_kpi_formula_months_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Line_Type = prepaid AND RECHARGE_Event_Date >= CurrentMonth-2MONTHS AND SUM(V{PCT_RECHARGE_Denomination}=f{(RECHARGE_Denomination*0.2)}) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 8,
+      "input": "total voice revenue over last 2 days.",
+      "http_status": 200,
+      "elapsed_s": 22.21,
+      "ok": true,
+      "selected_seed_id": "S04_last_n_days_sum",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentTime-2DAYS AND SUM(Total_Voice_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 9,
+      "input": "total data revenue over last 2 days.",
+      "http_status": 200,
+      "elapsed_s": 23.37,
+      "ok": true,
+      "selected_seed_id": "S04_last_n_days_sum",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentTime-2DAYS AND SUM(Total_Data_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 10,
+      "input": "Number of recharge transactions done by smartphone users in the last 90 days.",
+      "http_status": 200,
+      "elapsed_s": 2.27,
+      "ok": true,
+      "selected_seed_id": "S162_raw_kpi_days_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND COMMON_FCT_DT >= CurrentTime-90DAYS AND Recharge_count ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 11,
+      "input": "Number of subscription purchases done by smartphone users in the last 2 months",
+      "http_status": 200,
+      "elapsed_s": 60.32,
+      "ok": false,
+      "selected_seed_id": "S138_last_n_months_count_all_lower_only",
+      "has_time_bound": false,
+      "parent_condition": null,
+      "error": "Column resolution failed: KPI not matched: subscription purchases"
+    },
+    {
+      "case": 12,
+      "input": "Total offnet finance revenue generated by a customer in the last month",
+      "http_status": 200,
+      "elapsed_s": 2.26,
+      "ok": false,
+      "selected_seed_id": null,
+      "has_time_bound": false,
+      "parent_condition": null,
+      "error": "No seed candidates found."
+    },
+    {
+      "case": 13,
+      "input": "total prepaid SMS revenue of customer for the last one month",
+      "http_status": 200,
+      "elapsed_s": 40.01,
+      "ok": true,
+      "selected_seed_id": "S134_last_n_months_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_Prepay_Sms_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 14,
+      "input": "total revenue of smartphone users in the last 60 days who were activated more than 65 days ago",
+      "http_status": 200,
+      "elapsed_s": 67.36,
+      "ok": true,
+      "selected_seed_id": "S162_raw_kpi_days_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND AON > 65 AND COMMON_FCT_DT >= CurrentTime-60DAYS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 15,
+      "input": "show the total recharges performed by customers in the last month and who subscribed to products '123' or '125' also in the last 45 days",
+      "http_status": 200,
+      "elapsed_s": 81.29,
+      "ok": true,
+      "selected_seed_id": "S134_last_n_months_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND SUBSCRIPTIONS_EVENT_DATE >= CurrentTime-45DAYS AND COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(Recharge_count) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 16,
+      "input": "Find the total sms offnet revenue of active or inactive subscribers over the past 30 days",
+      "http_status": 200,
+      "elapsed_s": 191.12,
+      "ok": true,
+      "selected_seed_id": "S04_last_n_days_sum",
+      "has_time_bound": true,
+      "parent_condition": "CUST_360_VLR_ACTIVE_STATUS IN LIST (active;inactive) AND COMMON_FCT_DT >= CurrentTime-30DAYS AND SUM(OG_SMS_Idd_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 17,
+      "input": "To check the count of recharges performed by customers who have been using feature phones, smartphones and is an active subscriber and age in the network is more than 300 days",
+      "http_status": 200,
+      "elapsed_s": 129.11,
+      "ok": true,
+      "selected_seed_id": "S27_action_key_present",
+      "has_time_bound": false,
+      "parent_condition": "Profile_Cdr_Handset_Model IN LIST (feature phone;smartphone) AND Profile_Cdr_Subscriber_Status = active AND CUST_360_AGE > 300 AND Recharge_count ${operator} ${value} AND COUNT_ALL(Recharge_count) > 0",
+      "error": null
+    },
+    {
+      "case": 18,
+      "input": "Total revenue from bundled data usage within the local network for smartphone users, who have been on the network for more than 35 days, in the last 2 weeks.",
+      "http_status": 200,
+      "elapsed_s": 93.21,
+      "ok": true,
+      "selected_seed_id": "S136_last_n_weeks_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND AON > 35 AND COMMON_Event_Date >= CurrentWeek-2WEEKS AND SUM(COMMON_Data_Bundle_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 19,
+      "input": "to check average monthly revenue in the last 2 months from bundled data usage within the local network for smartphone users and who have been on the network for more than 10 days",
+      "http_status": 200,
+      "elapsed_s": 69.07,
+      "ok": true,
+      "selected_seed_id": "S167_avg_formula_months_bounded",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND AON > 10 AND COMMON_FCT_DT >= CurrentMonth-2MONTHS AND COMMON_FCT_DT < CurrentMonth+0MONTHS AND SUM(V{AVG_Total_Revenue}=f{Total_Revenue/2}) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 20,
+      "input": "show average daily revenue from bundled data usage in the last 90 days",
+      "http_status": 200,
+      "elapsed_s": 1.87,
+      "ok": true,
+      "selected_seed_id": "S143_avg_formula_days_currenttime_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentTime-90DAYS AND SUM(V{AVG_Total_Revenue}=f{Total_Revenue/90}) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 21,
+      "input": "Average revenue from free data usage in the last 2 weeks for active subscribers who are using smartphone devices and have been present in the network for more than 35 days",
+      "http_status": null,
+      "elapsed_s": 239.99,
+      "ok": false,
+      "selected_seed_id": null,
+      "has_time_bound": false,
+      "parent_condition": null,
+      "error": "TimeoutError('timed out')"
+    },
+    {
+      "case": 22,
+      "input": "Total revenue from free data usage for smartphone  users in the last 3 months.",
+      "http_status": 200,
+      "elapsed_s": 2.83,
+      "ok": true,
+      "selected_seed_id": "S134_last_n_months_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND COMMON_Event_Date >= CurrentMonth-3MONTHS AND SUM(COMMON_Data_Free_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 23,
+      "input": "Revenue from free data usage for iPhone users of Indian nationality in the last 2 weeks.",
+      "http_status": 200,
+      "elapsed_s": 42.09,
+      "ok": true,
+      "selected_seed_id": "S136_last_n_weeks_sum_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "CUST_360_HANDSET_MANUFACTURER = smartphone AND CUST_360_NATIONALITY = Indian AND COMMON_FCT_DT >= CurrentWeek-2WEEKS AND SUM(Total_Revenue) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 24,
+      "input": "To check the average weekly outgoing call revenue of a customer over the past 4 weeks.",
+      "http_status": 200,
+      "elapsed_s": 62.11,
+      "ok": true,
+      "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_Call_Revenue}=f{COMMON_OG_Call_Revenue/4}) ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 25,
+      "input": "Total revenue from outgoing international SMS in the last 30 days where count of bundled SMS equals 2",
+      "http_status": null,
+      "elapsed_s": 239.99,
+      "ok": false,
+      "selected_seed_id": null,
+      "has_time_bound": false,
+      "parent_condition": null,
+      "error": "TimeoutError('timed out')"
+    },
+    {
+      "case": 26,
+      "input": "revenue from local voice subscription services for smartphone users in the current month till date",
+      "http_status": 200,
+      "elapsed_s": 1.89,
+      "ok": true,
+      "selected_seed_id": "S178_raw_kpi_month_mtd",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND COMMON_FCT_DT >= CurrentMonth-0MONTHS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 27,
+      "input": "total revenue from local financial services for smartphone users in the last 15 days.",
+      "http_status": 200,
+      "elapsed_s": 169.05,
+      "ok": true,
+      "selected_seed_id": "S162_raw_kpi_days_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND COMMON_FCT_DT >= CurrentTime-15DAYS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 28,
+      "input": "Data Revenue from local financial services in week 6 for smartphone users who have been on the network for more than 35 days",
+      "http_status": 200,
+      "elapsed_s": 4.02,
+      "ok": true,
+      "selected_seed_id": "S179_raw_kpi_week_exact",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND AON > 35 AND COMMON_FCT_DT = CurrentWeek-6WEEKS AND Total_Data_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 29,
+      "input": "Revenue from Total Roaming financial services in last 4 weeks for smartphone users who recharged more than 100 and have been on the network for more than 35 days.",
+      "http_status": 200,
+      "elapsed_s": 36.54,
+      "ok": true,
+      "selected_seed_id": "S163_raw_kpi_weeks_lower_only",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination > 100 AND CUST_360_AGE > 35 AND COMMON_FCT_DT >= CurrentWeek-4WEEKS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    },
+    {
+      "case": 30,
+      "input": "local financial services revenue in Month till date for smartphone subscribers who recharged more than 100, age on network more than 35 days, and had roaming financial services revenue of at least 5000 in last month",
+      "http_status": null,
+      "elapsed_s": 239.99,
+      "ok": false,
+      "selected_seed_id": null,
+      "has_time_bound": false,
+      "parent_condition": null,
+      "error": "TimeoutError('timed out')"
+    },
+    {
+      "case": 31,
+      "input": "Revenue from data roaming financial services in month 1 for smartphone users who recharged more than 100 and have been on the network for more than 35 days.",
+      "http_status": 200,
+      "elapsed_s": 2.29,
+      "ok": true,
+      "selected_seed_id": "S165_raw_kpi_month_exact",
+      "has_time_bound": true,
+      "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination > 100 AND CUST_360_AGE > 35 AND COMMON_FCT_DT = CurrentMonth-1MONTHS AND Total_Revenue ${operator} ${value}",
+      "error": null
+    }
+  ]
+}

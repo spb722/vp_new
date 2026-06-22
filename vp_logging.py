@@ -86,7 +86,11 @@ def _print_decomposition(result: dict) -> None:
         if clause.get("operator_hint"):
             _print_kv("operator", clause.get("operator_hint"), indent=5)
         if clause.get("values"):
-            _print_kv("values", ", ".join(clause.get("values") or []), indent=5)
+            _print_kv(
+                "values",
+                ", ".join(str(value) for value in (clause.get("values") or [])),
+                indent=5,
+            )
         if clause.get("time_n") is not None or clause.get("time_unit"):
             _print_kv(
                 "time",
@@ -128,7 +132,7 @@ def _print_features(result: dict) -> None:
     if attribute_filters:
         print("  attribute_filters:")
         for clause in attribute_filters:
-            values = ", ".join(clause.get("values") or []) or "-"
+            values = ", ".join(str(value) for value in (clause.get("values") or [])) or "-"
             print(f"    - text: {_format_value(clause.get('text'))}")
             print(f"      values: {values}")
             print(f"      operator: {_format_value(clause.get('operator_hint'))}")

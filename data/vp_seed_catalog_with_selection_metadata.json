@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "total_seeds": 160,
+    "total_seeds": 179,
     "total_csv_rows_covered": 754,
     "omantel_csv_rows": 602,
     "airtel_csv_rows": 111,
@@ -17090,6 +17090,1123 @@
           "requires_kpi_col": false,
           "requires_date_col": false,
           "requires_N": false
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S161_raw_kpi_no_time",
+      "description": "Raw precomputed KPI comparison without an explicit time window",
+      "client": "both",
+      "output_template": "{kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports customer-360/precomputed metrics where the KPI column already encodes the business window, such as M1, MTD, 15D, 60D, W4, or 90D count.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": false,
+          "units": [],
+          "anchors": [],
+          "bound_style": "none"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": false,
+          "requires_N": false
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S162_raw_kpi_days_lower_only",
+      "description": "Raw KPI comparison over a rolling day window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports non-aggregated KPI comparisons where the API-resolved KPI should be thresholded inside a rolling day window.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S163_raw_kpi_weeks_lower_only",
+      "description": "Raw KPI comparison over a rolling week window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentWeek-{N}WEEKS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports non-aggregated KPI comparisons over rolling weeks.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "WEEKS"
+          ],
+          "anchors": [
+            "CurrentWeek"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S164_raw_kpi_months_lower_only",
+      "description": "Raw KPI comparison over a rolling month window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports non-aggregated KPI comparisons over rolling months.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S165_raw_kpi_month_exact",
+      "description": "Raw KPI comparison for an exact previous month",
+      "client": "both",
+      "output_template": "{date_col} = CurrentMonth-{N}MONTHS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports non-aggregated KPI comparisons for a pinned previous month.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "exact"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S166_last_n_weeks_avg_lower_only",
+      "description": "Generic AVG KPI over last N weeks using lower-only CurrentWeek window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentWeek-{N}WEEKS AND AVG({kpi_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports direct AVG over week windows when the user asks for an average value rather than an average-over-period formula.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "AVG",
+        "operation": {
+          "function": "AVG",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "WEEKS"
+          ],
+          "anchors": [
+            "CurrentWeek"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S167_avg_formula_months_bounded",
+      "description": "Average KPI over completed last N months using virtual formula and bounded CurrentMonth window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth+0MONTHS AND SUM(V{{{vp_name}}}=f{{{kpi_col}/{divisor}}}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports average monthly KPI requests over completed month windows.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "FORMULA",
+        "operation": {
+          "function": "FORMULA",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": true,
+          "formula_type": "average_over_period",
+          "divisor_source": "time_n"
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S168_raw_kpi_days_bounded",
+      "description": "Raw KPI comparison over a completed rolling day window",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND {date_col} < CurrentTime AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Adds a strict RAW bounded day-window shape for precomputed KPI comparisons that still require an explicit completed day range.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S169_raw_kpi_weeks_bounded",
+      "description": "Raw KPI comparison over completed rolling weeks",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentWeek-{N}WEEKS AND {date_col} < CurrentWeek AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Adds a strict RAW bounded week-window shape for completed-week comparisons.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "WEEKS"
+          ],
+          "anchors": [
+            "CurrentWeek"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S170_raw_kpi_months_bounded",
+      "description": "Raw KPI comparison over completed rolling months",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Adds a strict RAW bounded month-window shape for completed-month comparisons.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S171_count_all_days_bounded",
+      "description": "Generic COUNT_ALL over completed rolling days",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND {date_col} < CurrentTime AND COUNT_ALL({count_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Generic bounded day-window count seed for completed-day count requests.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "COUNT_ALL",
+        "operation": {
+          "function": "COUNT_ALL",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": false,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S172_count_all_weeks_lower_only",
+      "description": "Generic COUNT_ALL over last N weeks",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentWeek-{N}WEEKS AND COUNT_ALL({count_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Generic rolling-week count seed without presence/absence semantics.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "COUNT_ALL",
+        "operation": {
+          "function": "COUNT_ALL",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "WEEKS"
+          ],
+          "anchors": [
+            "CurrentWeek"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": false,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S173_count_all_months_exact",
+      "description": "Generic COUNT_ALL for an exact previous month",
+      "client": "both",
+      "output_template": "{date_col} = CurrentMonth-{N}MONTHS AND COUNT_ALL({count_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Generic exact-month count seed for pinned month count requests.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "COUNT_ALL",
+        "operation": {
+          "function": "COUNT_ALL",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "exact"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": false,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S174_count_all_months_bounded",
+      "description": "Generic COUNT_ALL over completed rolling months",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth AND COUNT_ALL({count_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Generic bounded month-window count seed for completed-month count requests.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "COUNT_ALL",
+        "operation": {
+          "function": "COUNT_ALL",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "bounded"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": false,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S175_avg_days_lower_only",
+      "description": "Generic AVG KPI over last N days",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND AVG({kpi_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports direct AVG over rolling days when no average-over-period formula is intended.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "AVG",
+        "operation": {
+          "function": "AVG",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S176_avg_months_lower_only",
+      "description": "Generic AVG KPI over last N months",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-{N}MONTHS AND AVG({kpi_col}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports direct AVG over rolling months when no average-over-period formula is intended.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "AVG",
+        "operation": {
+          "function": "AVG",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S177_percentage_formula_days_lower_only",
+      "description": "Calculated percentage of a KPI over last N days using virtual formula",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentTime-{N}DAYS AND SUM(V{{{vp_name}}}=f{{({kpi_col}*{factor})}}) ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Adds a strict rolling-day percentage formula seed for percentage-of-KPI requests with explicit day windows.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "FORMULA",
+        "operation": {
+          "function": "FORMULA",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "DAYS"
+          ],
+          "anchors": [
+            "CurrentTime"
+          ],
+          "bound_style": "lower_only"
+        },
+        "formula": {
+          "has_formula": true,
+          "formula_type": "percentage_of_kpi",
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S178_raw_kpi_month_mtd",
+      "description": "Raw KPI comparison for current month-to-date",
+      "client": "both",
+      "output_template": "{date_col} >= CurrentMonth-0MONTHS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports RAW KPI requests with current month till date / MTD wording without dropping the explicit time bound.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "MONTHS"
+          ],
+          "anchors": [
+            "CurrentMonth"
+          ],
+          "bound_style": "lmtd"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
+        }
+      },
+      "source": "extra_seed"
+    },
+    {
+      "seed_id": "S179_raw_kpi_week_exact",
+      "description": "Raw KPI comparison for an exact previous week index",
+      "client": "both",
+      "output_template": "{date_col} = CurrentWeek-{N}WEEKS AND {kpi_col} ${operator} ${value}",
+      "axes": {},
+      "csv_rows_count": 0,
+      "sample_csv_rows": [],
+      "reasoning": "Supports phrases like week 6 where the request refers to a specific week offset rather than a rolling week range.",
+      "selection_signature": {
+        "seed_type": "aggregation",
+        "agg_type": "RAW",
+        "operation": {
+          "function": "RAW",
+          "fixed_comparisons": []
+        },
+        "time": {
+          "required": true,
+          "units": [
+            "WEEKS"
+          ],
+          "anchors": [
+            "CurrentWeek"
+          ],
+          "bound_style": "exact"
+        },
+        "formula": {
+          "has_formula": false,
+          "formula_type": null,
+          "divisor_source": null
+        },
+        "guards": {
+          "not_null_guard": false,
+          "positive_guard": false
+        },
+        "groupby": {
+          "required": false
+        },
+        "join": {
+          "required": false
+        },
+        "filters": {
+          "requires_internal_filter": false
+        },
+        "runtime": {
+          "is_parameterized": false
+        },
+        "composition": {
+          "can_be_main_condition": true,
+          "composable_with_filters": true
+        },
+        "axes_summary": {
+          "requires_kpi_col": true,
+          "requires_date_col": true,
+          "requires_N": true
         }
       },
       "source": "extra_seed"

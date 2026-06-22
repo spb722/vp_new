@@ -14,7 +14,7 @@ def clean_for_api(text: str | None) -> str | None:
     if text is None:
         return None
 
-    text = text.strip()
+    text = str(text).strip()
     text = re.sub(r"\s+", " ", text)
     return text.lower()
 
@@ -157,6 +157,36 @@ GENERIC_SUBJECT_FILTERS = {
     "accounts",
 }
 
+SERVICE_DESCRIPTOR_VALUES = {
+    "voice",
+    "voice services",
+    "data",
+    "data services",
+    "free data",
+    "free data usage",
+    "bundled data",
+    "bundled data usage",
+    "data bundle",
+    "data bundles",
+    "local network",
+    "local",
+    "finance",
+    "financial services",
+    "finance services",
+    "finance voice services",
+    "roaming financial services",
+    "local financial services",
+    "outgoing",
+    "outgoing on-net sms",
+    "outgoing off-net sms",
+    "on-net sms",
+    "off-net sms",
+    "offnet sms",
+    "international outgoing calls",
+    "outgoing calls",
+    "pay-as-you-go data usage",
+}
+
 
 def clause_has_condition_intent(clause: dict | None) -> bool:
     if not clause:
@@ -194,17 +224,72 @@ def get_clause_kpi_text(clause: dict | None) -> str | None:
 
 
 def is_generic_subject_filter(clause: dict) -> bool:
-    if clause.get("values"):
-        return False
-
     text = clean_for_api(clause.get("text"))
-    return text in GENERIC_SUBJECT_FILTERS
+    if text:
+        text = re.sub(r"^(?:for|by|of|to|from|with)\s+(?:a|an|the|their)?\s*", "", text).strip()
+    values = [
+        clean_for_api(value)
+        for value in clause.get("values", [])
+        if clean_for_api(value)
+    ]
+
+    if text in GENERIC_SUBJECT_FILTERS:
+        return True
+
+    return bool(values) and all(value in GENERIC_SUBJECT_FILTERS for value in values)
 
 
-def remove_generic_subject_filters(attribute_filters: list) -> list:
+def is_service_descriptor_filter(clause: dict, original_input: str) -> bool:
+    text = clean_for_api(clause.get("text")) or ""
+    values = [
+        clean_for_api(value)
+        for value in clause.get("values", [])
+        if clean_for_api(value)
+    ]
+    original = clean_for_api(original_input) or ""
+
+    descriptor_texts = [text] + values
+    if any(item in SERVICE_DESCRIPTOR_VALUES for item in descriptor_texts):
+        return True
+
+    if values == ["prepaid"] and "prepaid sms revenue" in original:
+        return True
+
+    if values == ["active"] and "currently active" in original:
+        return True
+
+    return False
+
+
+def normalize_attribute_filter_values(attribute_filters: list) -> list:
+    normalized = []
+    for clause in attribute_filters:
+        copied = dict(clause)
+        values = []
+        for value in copied.get("values", []) or []:
+            cleaned = clean_for_api(str(value))
+            synonyms = {
+                "smartphones": "smartphone",
+                "smartphone devices": "smartphone",
+                "iphones": "smartphone",
+                "iphone": "smartphone",
+                "feature phones": "feature phone",
+                "featurephones": "feature phone",
+            }
+            values.append(synonyms.get(cleaned, value))
+        if values:
+            copied["values"] = list(dict.fromkeys(values))
+            if len(copied["values"]) > 1 and copied.get("operator_hint") in (None, "="):
+                copied["operator_hint"] = "IN_LIST"
+        normalized.append(copied)
+    return normalized
+
+
+def remove_non_customer_filters(attribute_filters: list, original_input: str) -> list:
     return [
         clause for clause in attribute_filters
         if not is_generic_subject_filter(clause)
+        and not is_service_descriptor_filter(clause, original_input)
     ]
 
 
@@ -358,10 +443,62 @@ def detect_product_presence(original_input: str, attribute_filters: list) -> dic
     if not product_ids:
         return None
 
-    return {
+    product_presence = {
         "product_ids": product_ids,
         "presence_direction": "present"
     }
+
+    product_time_match = re.search(
+        r"(?:also\s+)?in\s+the\s+last\s+(\d+)\s+days",
+        original_input,
+        flags=re.IGNORECASE,
+    )
+    if product_time_match and re.search(r"\b(product|subscribed|subscription|purchased|bought)\b", original_input, flags=re.IGNORECASE):
+        product_presence["time_unit"] = "DAYS"
+        product_presence["time_n"] = int(product_time_match.group(1))
+
+    return product_presence
+
+
+def is_rolling_product_month(original_input: str) -> bool:
+    text = original_input.lower()
+    if not re.search(r"\b(?:over|in)\s+(?:the\s+)?(?:past|last)\s+month\b", text):
+        return False
+    if re.search(r"\b(calendar|completed|previous|m1|month\s+1)\b", text):
+        return False
+    return re.search(r"\b(purchased|bought|subscribed|subscription|product)\b", text) is not None
+
+
+def detect_precomputed_kpi_intent(original_input: str, kpi_text: str | None) -> dict | None:
+    """
+    Some catalog KPIs already encode common customer-360 windows such as M1,
+    MTD, 30D, 60D, W4, or 90D count. For those, the resolver should select a
+    raw KPI seed rather than wrapping the mapped KPI in SUM/COUNT_ALL.
+    """
+    text = " ".join(part for part in [original_input, kpi_text or ""] if part).lower()
+
+    precomputed_markers = [
+        "finance",
+        "financial services",
+        "data bundle revenue",
+        "month till date",
+        "mtd",
+        "current month till date",
+        "month 1",
+        "last 60 days",
+        "last 15 days",
+        "last 30 days who",
+        "for a subscriber last 30 days",
+        "recharge transactions",
+    ]
+
+    if "free data usage" in text and re.search(r"\bover\s+the\s+last\s+\d+\s+weeks\b", text):
+        return {"keep_time": True}
+
+    if any(marker in text for marker in precomputed_markers):
+        return {"keep_time": True}
+
+    return None
 
 
 def has_filtered_count_intent(original_input: str, count_constraints: list) -> bool:
@@ -617,7 +754,8 @@ def build_seed_features(result: dict) -> dict:
     time_clauses = get_clauses(result, "time_window")
     count_constraints = get_clauses(result, "count_constraint")
     attribute_filters = get_clauses(result, "attribute_filter")
-    attribute_filters = remove_generic_subject_filters(attribute_filters)
+    attribute_filters = normalize_attribute_filter_values(attribute_filters)
+    attribute_filters = remove_non_customer_filters(attribute_filters, original_input)
     duration_thresholds = get_clauses(result, "duration_threshold")
 
     # Pick main measurable clause
@@ -697,6 +835,26 @@ def build_seed_features(result: dict) -> dict:
     if time_bound_style in ("unknown", "none"):
         time_bound_style = None
 
+    original_lower = original_input.lower()
+    if re.search(r"\b(current\s+month\s+till\s+date|month\s+till\s+date|mtd)\b", original_lower):
+        time_unit = "MONTHS"
+        time_n = 0
+        time_bound_style = "lmtd"
+        is_completed_period = False
+    else:
+        week_number_match = re.search(r"\bweek\s+(\d+)\b", original_lower)
+        month_number_match = re.search(r"\bmonth\s+(\d+)\b", original_lower)
+        if week_number_match:
+            time_unit = "WEEKS"
+            time_n = int(week_number_match.group(1))
+            time_bound_style = "exact"
+            is_completed_period = False
+        elif month_number_match:
+            time_unit = "MONTHS"
+            time_n = int(month_number_match.group(1))
+            time_bound_style = "exact"
+            is_completed_period = False
+
     month_window = None
     month_window_style = None
     month_window_classifier_error = None
@@ -745,8 +903,30 @@ def build_seed_features(result: dict) -> dict:
 
     if formula_type:
         has_formula = True
-        if not has_usable_value(agg_type):
+        if seed_intent.get("agg_type") == "FORMULA" or formula_type in {"average_over_period", "percentage_of_kpi"}:
             agg_type = "FORMULA"
+        elif not has_usable_value(agg_type):
+            agg_type = "FORMULA"
+
+    if (
+        formula_type == "average_over_period"
+        and re.search(r"^\s*average\s+revenue\b", original_input, flags=re.IGNORECASE)
+        and not re.search(r"\baverage\s+(?:daily|weekly|monthly)\b", original_input, flags=re.IGNORECASE)
+        and re.search(r"\bhave\s+been\s+active\s+for\s+more\s+than\b", original_input, flags=re.IGNORECASE)
+    ):
+        agg_type = "AVG"
+        has_formula = False
+        formula_type = None
+
+    if formula_type == "average_over_period" and time_unit == "MONTHS":
+        text_for_month_formula = " ".join(
+            str(part)
+            for part in [original_input, main_clause_text, kpi_text]
+            if part
+        ).lower()
+        if "average monthly" in text_for_month_formula and time_bound_style in (None, "lower_only"):
+            time_bound_style = "bounded"
+            is_completed_period = True
 
     # Count constraint detection
     has_count_constraint = bool(count_constraints)
@@ -758,12 +938,15 @@ def build_seed_features(result: dict) -> dict:
     needs_groupby = groupby_text is not None
     if not needs_groupby and truthy_seed_intent_flag(seed_intent, "groupby_required"):
         needs_groupby = True
+    if groupby_text is None and re.search(r"\bcustomers?\s+and\s+their\b", original_input, flags=re.IGNORECASE):
+        needs_groupby = False
 
     # Campaign presence/absence
     campaign_presence = detect_campaign_presence(original_input)
 
     # Product presence
     product_presence = detect_product_presence(original_input, attribute_filters)
+    product_presence_as_filter = False
 
     filtered_count = detect_filtered_count(
         original_input=original_input,
@@ -817,10 +1000,20 @@ def build_seed_features(result: dict) -> dict:
             if "product" not in clause.get("text", "").lower()
         ]
 
-        agg_type = "COUNT_ALL"
-        kpi_text = "product id"
+        if aggregation_clause and agg_type in {"SUM", "AVG", "MAX", "MIN", "RAW"}:
+            product_presence_as_filter = True
+        else:
+            agg_type = "COUNT_ALL"
+            kpi_text = "product id"
 
-        if time_unit == "MONTHS" or has_month_window_text(original_input, time_clause):
+        if product_presence_as_filter:
+            pass
+        elif is_rolling_product_month(original_input):
+            time_unit = "DAYS"
+            time_n = 30
+            time_bound_style = "lower_only"
+            month_window_style = None
+        elif time_unit == "MONTHS" or has_month_window_text(original_input, time_clause):
             month_window = classify_month_window_for_features(original_input, result)
             month_window_style = month_window.get("style")
 
@@ -834,6 +1027,18 @@ def build_seed_features(result: dict) -> dict:
 
             if month_window_style == "unknown":
                 month_window_classifier_error = month_window.get("reason")
+
+    precomputed_kpi = detect_precomputed_kpi_intent(original_input, kpi_text)
+    if precomputed_kpi and agg_type != "FORMULA" and not truthy_seed_intent_flag(seed_intent, "parameterized_window"):
+        agg_type = "RAW"
+        has_formula = False
+        formula_type = None
+        if not precomputed_kpi.get("keep_time"):
+            time_unit = None
+            time_n = None
+            time_bound_style = None
+            month_window_style = None
+            is_completed_period = False
 
     # Remove campaign attribute filters if campaign_presence will handle them
     if campaign_presence:
@@ -882,6 +1087,7 @@ def build_seed_features(result: dict) -> dict:
 
         "campaign_presence": campaign_presence,
         "product_presence": product_presence,
+        "product_presence_as_filter": product_presence_as_filter,
         "filtered_count": filtered_count,
         "dynamic_filter_fixed_count": dynamic_filter_fixed_count,
 

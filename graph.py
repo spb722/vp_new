@@ -364,7 +364,7 @@ def validate_output(state: VPState) -> dict:
     if not final.strip():
         errors.append("final_parent_condition is empty")
 
-    unresolved = re.findall(r"(?<!\$)\{[A-Za-z_][A-Za-z0-9_]*\}", final)
+    unresolved = re.findall(r"(?<![$Vf])\{[A-Za-z_][A-Za-z0-9_]*\}", final)
     if unresolved:
         errors.append(f"Unresolved placeholders: {unresolved}")
 

@@ -436,12 +436,48 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "raw_response": None
         }
 
-    with vp_verify_lookup_context(lookup_type="kpi", source_text=cleaned_text):
-        resolved = resolve_condition_from_api(cleaned_text)
+    candidates = [cleaned_text]
+
+    if cleaned_text and "revenue" in cleaned_text:
+        if "data" in cleaned_text:
+            candidates.extend(["total data revenue", "data revenue"])
+        if "voice" in cleaned_text:
+            candidates.extend(["total voice revenue", "voice revenue"])
+        if "sms" in cleaned_text:
+            candidates.extend(["total sms revenue", "sms revenue"])
+        candidates.append("total revenue")
+
+    first_error = None
+    resolved = None
+    resolved_from = cleaned_text
+
+    for candidate in dict.fromkeys(item for item in candidates if item):
+        try:
+            with vp_verify_lookup_context(
+                lookup_type="kpi",
+                source_text=cleaned_text,
+                candidate_text=candidate,
+            ):
+                candidate_resolution = resolve_condition_from_api(candidate)
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+            continue
+
+        if candidate_resolution["matched"]:
+            resolved = candidate_resolution
+            resolved_from = candidate
+            break
+
+        if resolved is None:
+            resolved = candidate_resolution
+
+    if resolved is None:
+        raise first_error
 
     return {
         "matched": resolved["matched"],
-        "input": cleaned_text,
+        "input": resolved_from,
         "kpi_col": resolved["column"],
         "table_name": resolved["table_name"],
         "datatype": resolved["datatype"],

@@ -1,3 +1,45 @@
+import re
+
+
+def _infer_operator_from_text(text: str) -> str | None:
+    text = text.lower()
+
+    if "more than" in text or "greater than" in text or "above" in text or "exceed" in text:
+        return ">"
+    if "less than" in text or "below" in text:
+        return "<"
+    if "at least" in text or "minimum" in text:
+        return ">="
+    if "at most" in text or "maximum" in text:
+        return "<="
+    return None
+
+
+def _first_numeric_value(values) -> int | float | None:
+    for value in values or []:
+        match = re.search(r"\d+(?:\.\d+)?", str(value))
+        if match:
+            number = float(match.group(0))
+            return int(number) if number.is_integer() else number
+    return None
+
+
+def _normalize_filter_value(value):
+    if not isinstance(value, str):
+        return value
+
+    cleaned = re.sub(r"\s+", " ", value).strip()
+    synonyms = {
+        "smartphones": "smartphone",
+        "smartphone devices": "smartphone",
+        "iphones": "smartphone",
+        "iphone": "smartphone",
+        "feature phones": "feature phone",
+        "featurephones": "feature phone",
+    }
+    return synonyms.get(cleaned.lower(), cleaned)
+
+
 def normalize_decomposition(result: dict) -> dict:
     completed_period_markers = [
         "completed",
@@ -44,6 +86,14 @@ def normalize_decomposition(result: dict) -> dict:
         if clause_type == "attribute_filter":
             values = clause.get("values", [])
 
+            if values:
+                clause["values"] = [_normalize_filter_value(value) for value in values]
+                values = clause["values"]
+
+            inferred_operator = _infer_operator_from_text(clause.get("text", ""))
+            if inferred_operator and _first_numeric_value(values) is not None:
+                clause["operator_hint"] = inferred_operator
+
             if clause.get("operator_hint") is None:
                 if len(values) > 1:
                     clause["operator_hint"] = "IN_LIST"
@@ -54,15 +104,15 @@ def normalize_decomposition(result: dict) -> dict:
         if clause_type == "duration_threshold":
             text = clause.get("text", "").lower()
 
+            if clause.get("time_n") is None:
+                numeric_value = _first_numeric_value(clause.get("values", []))
+                if numeric_value is None:
+                    numeric_value = _first_numeric_value([text])
+                if numeric_value is not None:
+                    clause["time_n"] = numeric_value
+
             if clause.get("operator_hint") is None:
-                if "more than" in text or "greater than" in text or "above" in text:
-                    clause["operator_hint"] = ">"
-                elif "less than" in text or "below" in text:
-                    clause["operator_hint"] = "<"
-                elif "at least" in text or "minimum" in text:
-                    clause["operator_hint"] = ">="
-                elif "at most" in text or "maximum" in text:
-                    clause["operator_hint"] = "<="
+                clause["operator_hint"] = _infer_operator_from_text(text)
 
         # Clean KPI text: remove aggregation words when agg_hint already captures them.
         if clause_type == "aggregation":

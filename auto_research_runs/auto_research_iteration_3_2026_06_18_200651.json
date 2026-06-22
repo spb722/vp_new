@@ -1,0 +1,1671 @@
+{
+  "iteration": 3,
+  "created_at": "2026-06-18T20:06:51",
+  "summary": {
+    "API_BLOCKED": 3,
+    "NON_PROMPT_BLOCKED": 4,
+    "PASS": 1,
+    "PROMPT_FILTER_EXTRACTION": 2,
+    "PROMPT_TIME_SEMANTICS": 8
+  },
+  "cases": [
+    {
+      "case": 7,
+      "input": "To check the average revenue from all international outgoing calls over last 4 weeks",
+      "expected": "COMMON_Event_Date >= CurrentWeek-4WEEKS AND SUM(V{AVG_WEEKLY_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}",
+      "status": "PASS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "4",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentWeek",
+            "n": "4",
+            "unit": "WEEKS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "4",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentWeek",
+            "n": "4",
+            "unit": "WEEKS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 5.69,
+          "response": {
+            "ok": false,
+            "parent_condition": "COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}",
+            "error": "Validation failed: Unresolved placeholders: ['{AVG_COMMON_OG_IDD_Call_Revenue}']",
+            "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+            "top_candidates": [
+              {
+                "seed_id": "S144_avg_formula_weeks_lower_only",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}",
+          "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": true,
+          "compare_errors": [],
+          "log_excerpt": "freellmapi client ready. Model: openai/gpt-oss-20b. Reasoning effort: medium. Max completion tokens: 4096\nfreellmapi decomposition client ready. Model: openai/gpt-oss-20b. Base URL: http://localhost:3001/v1/. Max tokens: 4096\nLoaded seeds: 160\nFirst seed: S01_fixed_month_sum\nDuplicate IDs already present: ['S134_last_n_months_sum_lower_only', 'S159_last_n_months_sum_exact', 'S135_last_n_months_max_lower_only', 'S157_last_n_days_max_lower_only', 'S158_last_n_months_max_bounded', 'S136_last_n_weeks_sum_lower_only', 'S137_simple_count_all_generic', 'S138_last_n_months_count_all_lower_only', 'S139_time_scoped_presence_count_gt_zero', 'S140_sum_with_fixed_count_constraint', 'S141_percentage_of_kpi_formula', 'S160_percentage_of_kpi_formula_months_lower_only', 'S142_avg_formula_months_lower_only', 'S143_avg_formula_days_currenttime_lower_only', 'S144_avg_formula_weeks_lower_only', 'S145_campaign_promo_absent_parameterized_days', 'S146_product_presence_days', 'S153_product_presence_month_exact', 'S154_product_presence_month_bounded', 'S155_product_presence_month_lmtd', 'S156_product_presence_current_or_previous_month', 'S147_last_n_days_sum_groupby', 'S148_simple_count_all_groupby', 'S149_product_count_days_dynamic', 'S150_filtered_count_days_dynamic', 'S151_dynamic_filter_fixed_count_days', 'S152_pure_attribute_presence']\nTotal seeds after append: 160\nSaved: data/vp_seed_catalog_with_selection_metadata.json\nLoaded 2 reinforced seed(s).\nLoaded seeds: 160\nFirst seed: S01_fixed_month_sum\nDuplicate IDs already present: ['S134_last_n_months_sum_lower_only', 'S159_last_n_months_sum_exact', 'S135_last_n_months_max_lower_only', 'S157_last_n_days_max_lower_only', 'S158_last_n_months_max_bounded', 'S136_last_n_weeks_sum_lower_only', 'S137_simple_count_all_generic', 'S138_last_n_months_count_all_lower_only', 'S139_time_scoped_presence_count_gt_zero', 'S140_sum_with_fixed_count_constraint', 'S141_percentage_of_kpi_formula', 'S160_percentage_of_kpi_formula_months_lower_only', 'S142_avg_formula_months_lower_only', 'S143_avg_formula_days_currenttime_lower_only', 'S144_avg_formula_weeks_lower_only', 'S145_campaign_promo_absent_parameterized_days', 'S146_product_presence_days', 'S153_product_presence_month_exact', 'S154_product_presence_month_bounded', 'S155_product_presence_month_lmtd', 'S156_product_presence_current_or_previous_month', 'S147_last_n_days_sum_groupby', 'S148_simple_count_all_groupby', 'S149_product_count_days_dynamic', 'S150_filtered_count_days_dynamic', 'S151_dynamic_filter_fixed_count_days', 'S152_pure_attribute_presence']\nTotal seeds after append: 160\nSaved: data/vp_seed_catalog_with_selection_metadata.json\nLoaded 2 reinforced seed(s).\nLoaded seeds: 160\nFirst seed: S01_fixed_month_sum\nDuplicate IDs already present: ['S134_last_n_months_sum_lower_only', 'S159_last_n_months_sum_exact', 'S135_last_n_months_max_lower_only', 'S157_last_n_days_max_lower_only', 'S158_last_n_months_max_bounded', 'S136_last_n_weeks_sum_lower_only', 'S137_simple_count_all_generic', 'S138_last_n_months_count_all_lower_only', 'S139_time_scoped_presence_count_gt_zero', 'S140_sum_with_fixed_count_constraint', 'S141_percentage_of_kpi_formula', 'S160_percentage_of_kpi_formula_months_lower_only', 'S142_avg_formula_months_lower_only', 'S143_avg_formula_days_currenttime_lower_only', 'S144_avg_formula_weeks_lower_only', 'S145_campaign_promo_absent_parameterized_days', 'S146_product_presence_days', 'S153_product_presence_month_exact', 'S154_product_presence_month_bounded', 'S155_product_presence_month_lmtd', 'S156_product_presence_current_or_previous_month', 'S147_last_n_days_sum_groupby', 'S148_simple_count_all_groupby', 'S149_product_count_days_dynamic', 'S150_filtered_count_days_dynamic', 'S151_dynamic_filter_fixed_count_days', 'S152_pure_attribute_presence']\nTotal seeds after append: 160\nSaved: data/vp_seed_catalog_with_selection_metadata.json\nLoaded 2 reinforced seed(s).\n\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  To check the average revenue from all international outgoing calls over last 4 weeks\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    FAILED\n\nDecomposition:\n  C1 aggregation\n     text: average revenue from all international outgoing calls\n     agg_hint: FORMULA\n     kpi_text: international outgoing calls revenue\n  C2 time_window\n     text: over last 4 weeks\n     time: 4 WEEKS\n     completed_period: false\n\nExtracted Features:\n  agg_type: FORMULA\n  kpi_text: international outgoing calls revenue\n  time_n: 4\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S144_avg_formula_weeks_lower_only\n  description: Average KPI over last N weeks using virtual formula and lower-only CurrentWeek window\n  score: 132\n  template: {date_col} >= CurrentWeek-{N}WEEKS AND SUM(V{{{vp_name}}}=f{{{kpi_col}/{divisor}}}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:FORMULA, formula_match:True, parameterized_match:False, groupby_match:False, time_unit_match:WEEKS, bound_style_match:lower_only\n  top_candidates:\n    - S144_avg_formula_weeks_lower_only score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: international outgoing calls revenue\n    column: COMMON_OG_IDD_Call_Revenue\n    table: Common_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    -\n  Rendered Seed Condition:\n    COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}\n  Final Parent Condition:\n    COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_COMMON_OG_IDD_Call_Revenue}=f{COMMON_OG_IDD_Call_Revenue/4}) ${operator} ${value}\n\nVP_verify Calls:\n  1. kpi\n     condition_text: international outgoing calls revenue\n     source_text: international outgoing calls revenue\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['international outgoing calls revenue'], 'check': False}\n     response:\n       status=ok | http=200 | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'international outgoing calls revenue',\n                                'kpi': 'COMMON_OG_IDD_Call_Revenue',\n                                'table_name': 'Common_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n\nError:\n  Validation failed: Unresolved placeholders: ['{AVG_COMMON_OG_IDD_Call_Revenue}']\n\nValidation:\n{'valid': False, 'errors': [\"Unresolved placeholders: ['{AVG_COMMON_OG_IDD_Call_Revenue}']\"]}\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:59602 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 13,
+      "input": "Number of recharge transactions done by smartphone users in the last 90 days.",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND Recharge_Count_90D ${operator} ${value}",
+      "status": "API_BLOCKED",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 7.57,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "Column resolution failed: Filter resolution failed for attribute_filter text='smartphone' values=['smartphone']: 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+            "selected_seed_id": "S28_count_time_scoped_absent",
+            "top_candidates": [
+              {
+                "seed_id": "S28_count_time_scoped_absent",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S29_count_time_scoped_present",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S139_time_scoped_presence_count_gt_zero",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns:filter_exception",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": "S28_count_time_scoped_absent",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns:filter_exception",
+            "stop_failure"
+          ],
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got None",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Number of recharge transactions done by smartphone users in the last 90 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: Number of recharge transactions\n     agg_hint: COUNT_ALL\n     kpi_text: recharge transactions\n  C2 attribute_filter\n     text: smartphone\n     operator: =\n     values: smartphone\n  C3 time_window\n     text: in the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: recharge transactions\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone\n      values: smartphone\n      operator: =\n\nSelected Example:\n  seed_id: S28_count_time_scoped_absent\n  description: Action key absent within a time window\n  score: 132\n  template: {key_col} ${operator} ${value} AND {date_col} >= CurrentTime-{N}DAYS AND COUNT_ALL({key_col}) = 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:DAYS, bound_style_match:lower_only\n  top_candidates:\n    - S28_count_time_scoped_absent score=132 warnings=[]\n    - S29_count_time_scoped_present score=132 warnings=[]\n    - S139_time_scoped_presence_count_gt_zero score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: recharge transactions\n    column: RECHARGE_Denomination\n    table: Recharge_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  1. kpi\n     condition_text: recharge transactions\n     source_text: recharge transactions\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['recharge transactions'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'recharge transactions',\n                                'kpi': 'RECHARGE_Denomination',\n                                'table_name': 'Recharge_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone\n     source_text: smartphone\n     candidate_text: smartphone\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone'], 'check': False}\n     response:\n       status=http_error | http=500\n       body:\n       {'message': 'Error in workflow'}\n\nError:\n  Column resolution failed: Filter resolution failed for attribute_filter text='smartphone' values=['smartphone']: 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:59726 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        },
+        {
+          "attempt": 2,
+          "http_status": 200,
+          "elapsed_s": 6.4,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "Column resolution failed: Filter resolution failed for attribute_filter text='smartphone' values=['smartphone']: 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+            "selected_seed_id": "S28_count_time_scoped_absent",
+            "top_candidates": [
+              {
+                "seed_id": "S28_count_time_scoped_absent",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S29_count_time_scoped_present",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S139_time_scoped_presence_count_gt_zero",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns:filter_exception",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": "S28_count_time_scoped_absent",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns:filter_exception",
+            "stop_failure"
+          ],
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got None",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Number of recharge transactions done by smartphone users in the last 90 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: Number of recharge transactions\n     agg_hint: COUNT_ALL\n     kpi_text: recharge transactions\n  C2 attribute_filter\n     text: smartphone\n     operator: =\n     values: smartphone\n  C3 time_window\n     text: in the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: recharge transactions\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone\n      values: smartphone\n      operator: =\n\nSelected Example:\n  seed_id: S28_count_time_scoped_absent\n  description: Action key absent within a time window\n  score: 132\n  template: {key_col} ${operator} ${value} AND {date_col} >= CurrentTime-{N}DAYS AND COUNT_ALL({key_col}) = 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:DAYS, bound_style_match:lower_only\n  top_candidates:\n    - S28_count_time_scoped_absent score=132 warnings=[]\n    - S29_count_time_scoped_present score=132 warnings=[]\n    - S139_time_scoped_presence_count_gt_zero score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: recharge transactions\n    column: RECHARGE_Denomination\n    table: Recharge_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  1. kpi\n     condition_text: recharge transactions\n     source_text: recharge transactions\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['recharge transactions'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'recharge transactions',\n                                'kpi': 'RECHARGE_Denomination',\n                                'table_name': 'Recharge_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone\n     source_text: smartphone\n     candidate_text: smartphone\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone'], 'check': False}\n     response:\n       status=http_error | http=500\n       body:\n       {'message': 'Error in workflow'}\n\nError:\n  Column resolution failed: Filter resolution failed for attribute_filter text='smartphone' values=['smartphone']: 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60001 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 15,
+      "input": "Total offnet finance revenue generated by a customer in the last month",
+      "expected": "CUST_360_VOICE_REVENUE_OFFNET_FINANCE_REV_M1 ${operator} ${value}",
+      "status": "NON_PROMPT_BLOCKED",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "SUM",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 2.71,
+          "response": {
+            "ok": true,
+            "parent_condition": "COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_OG_Local_Offnet_Call_Revenue) ${operator} ${value}",
+            "error": null,
+            "selected_seed_id": "S134_last_n_months_sum_lower_only",
+            "top_candidates": [
+              {
+                "seed_id": "S134_last_n_months_sum_lower_only",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S08_lmtd_sum",
+                "score": 125,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_OG_Local_Offnet_Call_Revenue) ${operator} ${value}",
+          "selected_seed_id": "S134_last_n_months_sum_lower_only",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got 'SUM'",
+            "time_windows mismatch: expected [], got [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'lower_only'}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Total offnet finance revenue generated by a customer in the last month\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: Total offnet finance revenue generated\n     agg_hint: SUM\n     kpi_text: offnet finance revenue\n  C2 time_window\n     text: in the last month\n     time: 1 MONTHS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: offnet finance revenue\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S134_last_n_months_sum_lower_only\n  description: Generic SUM KPI over last N months using lower-only CurrentMonth window\n  score: 132\n  template: {date_col} >= CurrentMonth-{N}MONTHS AND SUM({kpi_col}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:SUM, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:MONTHS, bound_style_match:lower_only\n  top_candidates:\n    - S134_last_n_months_sum_lower_only score=132 warnings=[]\n    - S08_lmtd_sum score=125 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: offnet finance revenue\n    column: COMMON_OG_Local_Offnet_Call_Revenue\n    table: Common_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    -\n  Rendered Seed Condition:\n    COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_OG_Local_Offnet_Call_Revenue) ${operator} ${value}\n  Final Parent Condition:\n    COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_OG_Local_Offnet_Call_Revenue) ${operator} ${value}\n\nVP_verify Calls:\n  1. kpi\n     condition_text: offnet finance revenue\n     source_text: offnet finance revenue\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['offnet finance revenue'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'offnet finance revenue',\n                                'kpi': 'COMMON_OG_Local_Offnet_Call_Revenue',\n                                'table_name': 'Common_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60131 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 18,
+      "input": "show the total recharges performed by customers in the last month and who subscribed to products '123' or '125' also in the last 45 days",
+      "expected": "SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND SUBSCRIPTIONS_EVENT_DATE >= CurrentTime-45DAYS AND RECHARGE_Event_Date >= CurrentMonth-1MONTHS AND SUM(RECHARGE_Frequency) ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "lower_only"
+          },
+          {
+            "anchor": "CurrentTime",
+            "n": "45",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "IN_LIST",
+            "values": [
+              "123",
+              "125"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 4.77,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'lower_only'}, {'anchor': 'CurrentTime', 'n': '45', 'unit': 'DAYS', 'style': 'lower_only'}], got []",
+            "attribute_filters mismatch: expected [{'operator': 'IN_LIST', 'values': ['123', '125']}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  show the total recharges performed by customers in the last month and who subscribed to products '123' or '125' also in the last 45 days\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: total recharges\n     agg_hint: SUM\n     kpi_text: recharges\n  C2 time_window\n     text: in the last month\n     time: 1 MONTHS\n     completed_period: false\n  C3 attribute_filter\n     text: subscribed to products '123' or '125'\n     operator: IN_LIST\n     values: 123, 125\n  C4 time_window\n     text: in the last 45 days\n     time: 45 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: product id\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  month_window_style: none\n  has_formula: false\n  has_count_constraint: false\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60174 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 23,
+      "input": "show average daily revenue from bundled data usage in the last 90 days",
+      "expected": "COMMON_Event_Date >= CurrentTime-90DAYS AND SUM(V{AVG_DAILY_COMMON_Data_Bundle_Revenue}=f{COMMON_Data_Bundle_Revenue/90}) ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "90",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "90",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 3.06,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "has_formula mismatch: expected True, got False",
+            "formula_kind mismatch: expected 'average_over_period', got None",
+            "formula_divisor mismatch: expected '90', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentTime', 'n': '90', 'unit': 'DAYS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  show average daily revenue from bundled data usage in the last 90 days\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: revenue from bundled data usage\n     agg_hint: SUM\n     kpi_text: revenue from bundled data usage\n  C2 time_window\n     text: in the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: revenue from bundled data usage\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60199 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 27,
+      "input": "To check the average weekly outgoing call revenue of a customer over the past 4 weeks.",
+      "expected": "COMMON_Event_Date >= CurrentTime-4WEEKS AND SUM(V{AVG_WEEKLY_COMMON_OG_Call_Revenue}=f{COMMON_OG_Call_Revenue/4}) ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "4",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "4",
+            "unit": "WEEKS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 1.95,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "has_formula mismatch: expected True, got False",
+            "formula_kind mismatch: expected 'average_over_period', got None",
+            "formula_divisor mismatch: expected '4', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentTime', 'n': '4', 'unit': 'WEEKS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  To check the average weekly outgoing call revenue of a customer over the past 4 weeks.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: outgoing call revenue\n     agg_hint: SUM\n     kpi_text: outgoing call revenue\n  C2 attribute_filter\n     text: customer\n     operator: =\n     values: customer\n  C3 time_window\n     text: over the past 4 weeks\n     time: 4 WEEKS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: outgoing call revenue\n  time_n: 4\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n  attribute_filters:\n    - text: customer\n      values: customer\n      operator: =\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60203 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 29,
+      "input": "revenue from local voice subscription services for smartphone users in the current month till date",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND 360_Local_Voice_Plan_Rev_MTD ${operator} ${value}",
+      "status": "PROMPT_FILTER_EXTRACTION",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 3.08,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got None",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  revenue from local voice subscription services for smartphone users in the current month till date\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: revenue from local voice subscription services\n     agg_hint: SUM\n     kpi_text: revenue\n  C2 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C3 time_window\n     text: in the current month till date\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: revenue\n  time_unit: MONTHS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60227 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 31,
+      "input": "Data Revenue from local financial services in week 6 for smartphone users who have been on the network for more than 35 days",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND Profile_Cdr_Age > 35 AND CUST_360_DATA_REVENUE_LOCAL_FINANCE_REV_W6 ${operator} ${value}",
+      "status": "PROMPT_FILTER_EXTRACTION",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [
+          {
+            "operator": ">",
+            "value": "35",
+            "unit": null
+          }
+        ],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 1.7,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got None",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []",
+            "duration_thresholds mismatch: expected [{'operator': '>', 'value': '35', 'unit': None}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Data Revenue from local financial services in week 6 for smartphone users who have been on the network for more than 35 days\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: Data Revenue from local financial services\n     agg_hint: SUM\n     kpi_text: Data Revenue\n  C2 time_window\n     text: in week 6\n     time: 6 WEEKS\n     completed_period: false\n  C3 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C4 duration_threshold\n     text: who have been on the network for more than 35 days\n     operator: >\n     time: 35 DAYS\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: data revenue\n  time_n: 6\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n  duration_thresholds:\n    - text: who have been on the network for more than 35 days\n      time: 35 DAYS\n      operator: >\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60270 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 33,
+      "input": "local financial services revenue in Month till date for smartphone subscribers who recharged more than 100, age on network more than 35 days, and had roaming financial services revenue of at least 5000 in last month",
+      "expected": "RECHARGE_Denomination > 100 AND Profile_Cdr_Handset_Type = smartphone AND AON > 35 AND FCT_DT >= CurrentMonth-1MONTHS AND SUM(OG_SMS_Roaming_Revenue) >= 5000 AND CUST_360_DATA_REVENUE_LOCAL_FINANCE_REV_MTD ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [
+          {
+            "operator": ">",
+            "value": "35",
+            "unit": null
+          }
+        ],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 3.06,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'lower_only'}], got []",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []",
+            "duration_thresholds mismatch: expected [{'operator': '>', 'value': '35', 'unit': None}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  local financial services revenue in Month till date for smartphone subscribers who recharged more than 100, age on network more than 35 days, and had roaming financial services revenue of at least 5000 in last month\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: local financial services revenue\n     agg_hint: SUM\n     kpi_text: local financial services revenue\n  C2 time_window\n     text: in Month till date\n     completed_period: false\n  C3 attribute_filter\n     text: smartphone subscribers\n     operator: =\n     values: smartphone\n  C4 duration_threshold\n     text: age on network more than 35 days\n     operator: >\n     time: 35 DAYS\n  C5 attribute_filter\n     text: recharged more than 100\n     operator: >\n     values: 100\n  C6 attribute_filter\n     text: roaming financial services revenue of at least 5000 in last month\n     operator: >=\n     values: 5000\n     time: 1 MONTHS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: local financial services revenue\n  time_unit: MONTHS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone subscribers\n      values: smartphone\n      operator: =\n    - text: recharged more than 100\n      values: 100\n      operator: >\n    - text: roaming financial services revenue of at least 5000 in last month\n      values: 5000\n      operator: >=\n  duration_thresholds:\n    - text: age on network more than 35 days\n      time: 35 DAYS\n      operator: >\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60278 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 34,
+      "input": "Revenue from data roaming financial services in month 1 for smartphone users who recharged more than 100 and have been on the network for more than 35 days.",
+      "expected": "RECHARGE_Denomination > 100 AND Profile_Cdr_Handset_Type = smartphone AND Profile_Cdr_Age > 35 AND CUST_360_DATA_REVENUE_ROAMING_FINANCE_REV_M1 ${operator} ${value}",
+      "status": "NON_PROMPT_BLOCKED",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [
+          {
+            "operator": ">",
+            "value": "35",
+            "unit": null
+          }
+        ],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "SUM",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "bounded"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "100"
+            ]
+          },
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [
+          {
+            "operator": ">",
+            "value": "35",
+            "unit": null
+          }
+        ],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 2.04,
+          "response": {
+            "ok": true,
+            "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination = 100 AND CUST_360_AGE > 35 AND COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Event_Date < CurrentMonth AND SUM(COMMON_Data_Revenue) ${operator} ${value}",
+            "error": null,
+            "selected_seed_id": "S13_last_n_months_bounded",
+            "top_candidates": [
+              {
+                "seed_id": "S13_last_n_months_bounded",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination = 100 AND CUST_360_AGE > 35 AND COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Event_Date < CurrentMonth AND SUM(COMMON_Data_Revenue) ${operator} ${value}",
+          "selected_seed_id": "S13_last_n_months_bounded",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got 'SUM'",
+            "time_windows mismatch: expected [], got [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'bounded'}]",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got [{'operator': '=', 'values': ['100']}, {'operator': '=', 'values': ['smartphone']}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Revenue from data roaming financial services in month 1 for smartphone users who recharged more than 100 and have been on the network for more than 35 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: Revenue from data roaming financial services\n     agg_hint: SUM\n     kpi_text: revenue\n  C2 time_window\n     text: in month 1\n     time: 1 MONTHS\n     completed_period: false\n  C3 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C4 duration_threshold\n     text: have been on the network for more than 35 days\n     operator: >\n     time: 35 DAYS\n  C5 attribute_filter\n     text: who recharged more than 100\n     operator: >\n     values: 100\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: revenue\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n    - text: who recharged more than 100\n      values: 100\n      operator: >\n  duration_thresholds:\n    - text: have been on the network for more than 35 days\n      time: 35 DAYS\n      operator: >\n\nSelected Example:\n  seed_id: S13_last_n_months_bounded\n  description: KPI sum over last N months with upper bound (< CurrentMonth) \u2014 Airtel data usage\n  score: 132\n  template: {date_col} >= CurrentMonth-{N}MONTHS AND {date_col} < CurrentMonth AND SUM({kpi_col}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:SUM, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:MONTHS, bound_style_match:bounded\n  top_candidates:\n    - S13_last_n_months_bounded score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: revenue\n    column: COMMON_Data_Revenue\n    table: Common_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    - Profile_Cdr_Handset_Type = smartphone\n    - RECHARGE_Denomination = 100\n    - CUST_360_AGE > 35\n  Rendered Seed Condition:\n    COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Event_Date < CurrentMonth AND SUM(COMMON_Data_Revenue) ${operator} ${value}\n  Final Parent Condition:\n    Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination = 100 AND CUST_360_AGE > 35 AND COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Event_Date < CurrentMonth AND SUM(COMMON_Data_Revenue) ${operator} ${value}\n\nVP_verify Calls:\n  1. kpi\n     condition_text: revenue\n     source_text: revenue\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['revenue'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'revenue',\n                                'kpi': 'COMMON_Data_Revenue',\n                                'table_name': 'Common_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone users\n     source_text: smartphone users\n     candidate_text: smartphone users\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone users'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'smartphone users',\n                                'kpi': 'Profile_Cdr_Handset_Type',\n                                'table_name': 'Profile_Cdr_group',\n                                'datatype': 'categorical',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  3. attribute_filter\n     condition_text: who recharged more than 100\n     source_text: who recharged more than 100\n     candidate_text: who recharged more than 100\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['who recharged more than 100'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'who recharged more than 100',\n                                'kpi': 'RECHARGE_Denomination',\n                                'table_name': 'Recharge_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  4. duration_threshold\n     condition_text: have been on the network for more than 35 days\n     source_text: have been on the network for more than 35 days\n     candidate_text: have been on the network for more than 35 days\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['have been on the network for more than 35 days'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'have been on the network for more than 35 days',\n                                'kpi': 'CUST_360_AGE',\n                                'table_name': '360_PROFILE',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60373 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 44,
+      "input": "Show the total number of recharge transactions completed by smartphone users over the last 90 days.",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND Recharge_Count_90D ${operator} ${value}",
+      "status": "NON_PROMPT_BLOCKED",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "90",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 2.19,
+          "response": {
+            "ok": true,
+            "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0",
+            "error": null,
+            "selected_seed_id": "S28_count_time_scoped_absent",
+            "top_candidates": [
+              {
+                "seed_id": "S28_count_time_scoped_absent",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S29_count_time_scoped_present",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S139_time_scoped_presence_count_gt_zero",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0",
+          "selected_seed_id": "S28_count_time_scoped_absent",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got 'COUNT_ALL'",
+            "time_windows mismatch: expected [], got [{'anchor': 'CurrentTime', 'n': '90', 'unit': 'DAYS', 'style': 'lower_only'}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Show the total number of recharge transactions completed by smartphone users over the last 90 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: total number of recharge transactions\n     agg_hint: COUNT_ALL\n     kpi_text: recharge transactions\n  C2 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C3 time_window\n     text: over the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: recharge transactions\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n\nSelected Example:\n  seed_id: S28_count_time_scoped_absent\n  description: Action key absent within a time window\n  score: 132\n  template: {key_col} ${operator} ${value} AND {date_col} >= CurrentTime-{N}DAYS AND COUNT_ALL({key_col}) = 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:DAYS, bound_style_match:lower_only\n  top_candidates:\n    - S28_count_time_scoped_absent score=132 warnings=[]\n    - S29_count_time_scoped_present score=132 warnings=[]\n    - S139_time_scoped_presence_count_gt_zero score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: recharge transactions\n    column: RECHARGE_Denomination\n    table: Recharge_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    - Profile_Cdr_Handset_Type = smartphone\n  Rendered Seed Condition:\n    RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0\n  Final Parent Condition:\n    Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0\n\nVP_verify Calls:\n  1. kpi\n     condition_text: recharge transactions\n     source_text: recharge transactions\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['recharge transactions'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'recharge transactions',\n                                'kpi': 'RECHARGE_Denomination',\n                                'table_name': 'Recharge_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone users\n     source_text: smartphone users\n     candidate_text: smartphone users\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone users'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'smartphone users',\n                                'kpi': 'Profile_Cdr_Handset_Type',\n                                'table_name': 'Profile_Cdr_group',\n                                'datatype': 'categorical',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60375 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 45,
+      "input": "Get the number of recharge transactions performed by smartphone users in the last 90 days.",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND Recharge_Count_90D ${operator} ${value}",
+      "status": "NON_PROMPT_BLOCKED",
+      "expected_structure": {
+        "aggregation": "RAW",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "90",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 2.74,
+          "response": {
+            "ok": true,
+            "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0",
+            "error": null,
+            "selected_seed_id": "S28_count_time_scoped_absent",
+            "top_candidates": [
+              {
+                "seed_id": "S28_count_time_scoped_absent",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S29_count_time_scoped_present",
+                "score": 132,
+                "warnings": []
+              },
+              {
+                "seed_id": "S139_time_scoped_presence_count_gt_zero",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0",
+          "selected_seed_id": "S28_count_time_scoped_absent",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'RAW', got 'COUNT_ALL'",
+            "time_windows mismatch: expected [], got [{'anchor': 'CurrentTime', 'n': '90', 'unit': 'DAYS', 'style': 'lower_only'}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Get the number of recharge transactions performed by smartphone users in the last 90 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: number of recharge transactions\n     agg_hint: COUNT_ALL\n     kpi_text: recharge transactions\n  C2 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C3 time_window\n     text: in the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: recharge transactions\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n\nSelected Example:\n  seed_id: S28_count_time_scoped_absent\n  description: Action key absent within a time window\n  score: 132\n  template: {key_col} ${operator} ${value} AND {date_col} >= CurrentTime-{N}DAYS AND COUNT_ALL({key_col}) = 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:DAYS, bound_style_match:lower_only\n  top_candidates:\n    - S28_count_time_scoped_absent score=132 warnings=[]\n    - S29_count_time_scoped_present score=132 warnings=[]\n    - S139_time_scoped_presence_count_gt_zero score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: recharge transactions\n    column: RECHARGE_Denomination\n    table: Recharge_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    - Profile_Cdr_Handset_Type = smartphone\n  Rendered Seed Condition:\n    RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0\n  Final Parent Condition:\n    Profile_Cdr_Handset_Type = smartphone AND RECHARGE_Denomination ${operator} ${value} AND RECHARGE_Event_Date >= CurrentTime-90DAYS AND COUNT_ALL(RECHARGE_Denomination) = 0\n\nVP_verify Calls:\n  1. kpi\n     condition_text: recharge transactions\n     source_text: recharge transactions\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['recharge transactions'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'recharge transactions',\n                                'kpi': 'RECHARGE_Denomination',\n                                'table_name': 'Recharge_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone users\n     source_text: smartphone users\n     candidate_text: smartphone users\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone users'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'smartphone users',\n                                'kpi': 'Profile_Cdr_Handset_Type',\n                                'table_name': 'Profile_Cdr_group',\n                                'datatype': 'categorical',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60377 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 47,
+      "input": "Show customers and their total prepaid SMS revenue for the last one month.",
+      "expected": "COMMON_FCT_DT >= CurrentMonth-1MONTHS AND SUM(COMMON_Prepay_Sms_Revenue) ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 3.45,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Show customers and their total prepaid SMS revenue for the last one month.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: total prepaid SMS revenue\n     agg_hint: SUM\n     kpi_text: prepaid SMS revenue\n  C2 attribute_filter\n     text: customers\n  C3 time_window\n     text: for the last one month\n     time: 1 MONTHS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: prepaid sms revenue\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  has_formula: false\n  has_count_constraint: false\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60436 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 49,
+      "input": "List customers who purchased either product 123 or product 125 in the past month.",
+      "expected": "SUBSCRIPTIONS_EVENT_DATE >= CurrentTime-30DAYS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "30",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "IN_LIST",
+            "values": [
+              "123",
+              "125"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "exact"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "IN_LIST",
+            "values": [
+              "123",
+              "125"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 2.71,
+          "response": {
+            "ok": true,
+            "parent_condition": "SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+            "error": null,
+            "selected_seed_id": "S153_product_presence_month_exact",
+            "top_candidates": [
+              {
+                "seed_id": "S153_product_presence_month_exact",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+          "selected_seed_id": "S153_product_presence_month_exact",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "time_windows mismatch: expected [{'anchor': 'CurrentTime', 'n': '30', 'unit': 'DAYS', 'style': 'lower_only'}], got [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'exact'}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  List customers who purchased either product 123 or product 125 in the past month.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: List customers\n     agg_hint: COUNT_ALL\n     kpi_text: customers\n  C2 attribute_filter\n     text: product 123 or product 125\n     operator: IN_LIST\n     values: 123, 125\n  C3 time_window\n     text: in the past month\n     time: 1 MONTHS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: product id\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  month_window_style: exact\n  has_formula: false\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S153_product_presence_month_exact\n  description: Product presence for product list in a pinned previous month\n  score: 132\n  template: {date_col} = CurrentMonth-{N}MONTHS AND {key_col} IN LIST ({list_values}) AND COUNT_ALL({key_col}) > 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:MONTHS, bound_style_match:exact\n  top_candidates:\n    - S153_product_presence_month_exact score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: product id\n    column: SUBSCRIPTIONS_Product_Id\n    table: SUBSCRIPTIONS\n    matched: true\n  Extracted Conditions:\n    -\n  Rendered Seed Condition:\n    SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0\n  Final Parent Condition:\n    SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0\n\nVP_verify Calls:\n  -\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60461 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 50,
+      "input": "Get customers who bought product 123 or 125 over the last month.",
+      "expected": "SUBSCRIPTIONS_EVENT_DATE >= CurrentTime-30DAYS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "30",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "IN_LIST",
+            "values": [
+              "123",
+              "125"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": "COUNT_ALL",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentMonth",
+            "n": "1",
+            "unit": "MONTHS",
+            "style": "exact"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "IN_LIST",
+            "values": [
+              "123",
+              "125"
+            ]
+          }
+        ],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 1.9,
+          "response": {
+            "ok": true,
+            "parent_condition": "SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+            "error": null,
+            "selected_seed_id": "S153_product_presence_month_exact",
+            "top_candidates": [
+              {
+                "seed_id": "S153_product_presence_month_exact",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns",
+              "render_condition",
+              "validate_output"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": "SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0",
+          "selected_seed_id": "S153_product_presence_month_exact",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns",
+            "render_condition",
+            "validate_output"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "time_windows mismatch: expected [{'anchor': 'CurrentTime', 'n': '30', 'unit': 'DAYS', 'style': 'lower_only'}], got [{'anchor': 'CurrentMonth', 'n': '1', 'unit': 'MONTHS', 'style': 'exact'}]"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Get customers who bought product 123 or 125 over the last month.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    OK\n  4. render_condition   OK\n  5. validate_output    OK\n\nDecomposition:\n  C1 aggregation\n     text: customers\n     agg_hint: COUNT_ALL\n     kpi_text: customers\n  C2 attribute_filter\n     text: product 123 or 125\n     operator: IN_LIST\n     values: 123, 125\n  C3 time_window\n     text: over the last month\n     time: 1 MONTHS\n     completed_period: false\n\nExtracted Features:\n  agg_type: COUNT_ALL\n  kpi_text: product id\n  time_n: 1\n  time_unit: MONTHS\n  is_completed_period: false\n  month_window_style: exact\n  has_formula: false\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S153_product_presence_month_exact\n  description: Product presence for product list in a pinned previous month\n  score: 132\n  template: {date_col} = CurrentMonth-{N}MONTHS AND {key_col} IN LIST ({list_values}) AND COUNT_ALL({key_col}) > 0\n  reasons: client_global_seed, can_be_main_condition, agg_match:COUNT_ALL, formula_match:False, parameterized_match:False, groupby_match:False, time_unit_match:MONTHS, bound_style_match:exact\n  top_candidates:\n    - S153_product_presence_month_exact score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: product id\n    column: SUBSCRIPTIONS_Product_Id\n    table: SUBSCRIPTIONS\n    matched: true\n  Extracted Conditions:\n    -\n  Rendered Seed Condition:\n    SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0\n  Final Parent Condition:\n    SUBSCRIPTIONS_EVENT_DATE = CurrentMonth-1MONTHS AND SUBSCRIPTIONS_Product_Id IN LIST (123;125) AND COUNT_ALL(SUBSCRIPTIONS_Product_Id) > 0\n\nVP_verify Calls:\n  -\n\nResult:\n  ok: true\n================================================================================\nINFO:     127.0.0.1:60557 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 52,
+      "input": "Show the average daily revenue generated from bundled data usage by a customer over the last 90 days.",
+      "expected": "COMMON_FCT_DT >= CurrentTime-90DAYS AND SUM(V{AVG_DAILY_COMMON_Data_Bundle_Revenue}=f{COMMON_Data_Bundle_Revenue/90}) ${operator} ${value}",
+      "status": "PROMPT_TIME_SEMANTICS",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "90",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentTime",
+            "n": "90",
+            "unit": "DAYS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 1.74,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "No seed candidates found.",
+            "selected_seed_id": null,
+            "top_candidates": [],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "stop_failure"
+          ],
+          "api_failure": false,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "has_formula mismatch: expected True, got False",
+            "formula_kind mismatch: expected 'average_over_period', got None",
+            "formula_divisor mismatch: expected '90', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentTime', 'n': '90', 'unit': 'DAYS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Show the average daily revenue generated from bundled data usage by a customer over the last 90 days.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    not_run\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: revenue generated from bundled data usage\n     agg_hint: SUM\n     kpi_text: revenue generated from bundled data usage\n  C2 attribute_filter\n     text: by a customer\n     operator: =\n     values: customer\n  C3 time_window\n     text: over the last 90 days\n     time: 90 DAYS\n     completed_period: false\n\nExtracted Features:\n  agg_type: SUM\n  kpi_text: revenue generated from bundled data usage\n  time_n: 90\n  time_unit: DAYS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n  attribute_filters:\n    - text: by a customer\n      values: customer\n      operator: =\n\nSelected Example:\n  none selected; status=NO_CANDIDATES; message=No seed candidates found.\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  -\n\nError:\n  No seed candidates found.\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60559 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    },
+    {
+      "case": 53,
+      "input": "Average revenue from free data usage by smartphone users who have been active for more than 35 days in the last 2 weeks.",
+      "expected": "Profile_Cdr_Handset_Type = smartphone AND AON > 35 AND COMMON_Event_Date >= CurrentWeek-2WEEKS AND AVG(COMMON_Data_Free_Revenue) ${operator} ${value}",
+      "status": "API_BLOCKED",
+      "expected_structure": {
+        "aggregation": "AVG",
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentWeek",
+            "n": "2",
+            "unit": "WEEKS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [
+          {
+            "operator": "=",
+            "values": [
+              "smartphone"
+            ]
+          }
+        ],
+        "duration_thresholds": [
+          {
+            "operator": ">",
+            "value": "35",
+            "unit": null
+          }
+        ],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 6.36,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "Column resolution failed: Filter resolution failed for attribute_filter text='smartphone users' values=['smartphone']; duration_threshold text='active for more than 35 days' time=35 'DAYS': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+            "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+            "top_candidates": [
+              {
+                "seed_id": "S144_avg_formula_weeks_lower_only",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns:filter_exception",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns:filter_exception",
+            "stop_failure"
+          ],
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'AVG', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentWeek', 'n': '2', 'unit': 'WEEKS', 'style': 'lower_only'}], got []",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []",
+            "duration_thresholds mismatch: expected [{'operator': '>', 'value': '35', 'unit': None}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Average revenue from free data usage by smartphone users who have been active for more than 35 days in the last 2 weeks.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: Average revenue from free data usage\n     agg_hint: AVG\n     kpi_text: revenue from free data usage\n  C2 attribute_filter\n     text: smartphone users\n     operator: =\n     values: smartphone\n  C3 duration_threshold\n     text: active for more than 35 days\n     operator: >\n     time: 35 DAYS\n  C4 time_window\n     text: in the last 2 weeks\n     time: 2 WEEKS\n     completed_period: false\n\nExtracted Features:\n  agg_type: FORMULA\n  kpi_text: revenue from free data usage\n  time_n: 2\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n  attribute_filters:\n    - text: smartphone users\n      values: smartphone\n      operator: =\n  duration_thresholds:\n    - text: active for more than 35 days\n      time: 35 DAYS\n      operator: >\n\nSelected Example:\n  seed_id: S144_avg_formula_weeks_lower_only\n  description: Average KPI over last N weeks using virtual formula and lower-only CurrentWeek window\n  score: 132\n  template: {date_col} >= CurrentWeek-{N}WEEKS AND SUM(V{{{vp_name}}}=f{{{kpi_col}/{divisor}}}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:FORMULA, formula_match:True, parameterized_match:False, groupby_match:False, time_unit_match:WEEKS, bound_style_match:lower_only\n  top_candidates:\n    - S144_avg_formula_weeks_lower_only score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI:\n    input: revenue from free data usage\n    column: COMMON_Data_Free_Revenue\n    table: Common_Seg_Fct\n    matched: true\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  1. kpi\n     condition_text: revenue from free data usage\n     source_text: revenue from free data usage\n     request: not sent (sqlite_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['revenue from free data usage'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'revenue from free data usage',\n                                'kpi': 'COMMON_Data_Free_Revenue',\n                                'table_name': 'Common_Seg_Fct',\n                                'datatype': 'numeric',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  2. attribute_filter\n     condition_text: smartphone users\n     source_text: smartphone users\n     candidate_text: smartphone users\n     request: not sent (l1_cache)\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['smartphone users'], 'check': False}\n     response:\n       status=cache_hit | matches=1 | unmatched=0\n       body:\n       {'output': {'matches': [{'condition': 'smartphone users',\n                                'kpi': 'Profile_Cdr_Handset_Type',\n                                'table_name': 'Profile_Cdr_group',\n                                'datatype': 'categorical',\n                                'date_column': None}],\n                   'unmatched': [],\n                   'mismatch_percentage': 0}}\n  3. duration_threshold\n     condition_text: active for more than 35 days\n     source_text: active for more than 35 days\n     candidate_text: active for more than 35 days\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['active for more than 35 days'], 'check': False}\n     response:\n       status=http_error | http=500\n       body:\n       {'message': 'Error in workflow'}\n\nError:\n  Column resolution failed: Filter resolution failed for attribute_filter text='smartphone users' values=['smartphone']; duration_threshold text='active for more than 35 days' time=35 'DAYS': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60624 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        },
+        {
+          "attempt": 2,
+          "http_status": 500,
+          "elapsed_s": 7.31,
+          "response": null,
+          "transport_error": "Internal Server Error",
+          "parent_condition": null,
+          "selected_seed_id": null,
+          "trajectory": null,
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'AVG', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentWeek', 'n': '2', 'unit': 'WEEKS', 'style': 'lower_only'}], got []",
+            "attribute_filters mismatch: expected [{'operator': '=', 'values': ['smartphone']}], got []",
+            "duration_thresholds mismatch: expected [{'operator': '>', 'value': '35', 'unit': None}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Average revenue from free data usage by smartphone users who have been active for more than 35 days in the last 2 weeks.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 formula\n     text: Average revenue from free data usage\n     agg_hint: FORMULA\n     kpi_text: revenue from free data usage\n  C2 time_window\n     text: in the last 2 weeks\n     time: 2 WEEKS\n     completed_period: false\n  C3 attribute_filter\n     text: smartphone\n     operator: =\n     values: smartphone\n  C4 duration_threshold\n     text: more than 35 days\n     operator: >\nINFO:     127.0.0.1:60683 - \"POST /resolve HTTP/1.1\" 500 Internal Server Error\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py\", line 409, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py\", line 60, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/fastapi/applications.py\", line 1054, in __call__\n    await super().__call__(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/applications.py\", line 112, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py\", line 187, in __call__\n    raise exc\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py\", line 165, in __call__\n    await self.app(scope, receive, _send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 62, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/routing.py\", line 714, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/routing.py\", line 734, in app\n    await route.handle(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/routing.py\", line 288, in handle\n    await self.app(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/routing.py\", line 76, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/routing.py\", line 73, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/fastapi/routing.py\", line 301, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/fastapi/routing.py\", line 214, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/starlette/concurrency.py\", line 37, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/anyio/to_thread.py\", line 56, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2470, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/opt/homebrew/anaconda3/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 967, in run\n    result = context.run(func, *args)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/sachinpb/PycharmProjects/vp_new/app.py\", line 50, in resolve\n    print_vp_resolve_log(req, result)\n  File \"/Users/sachinpb/PycharmProjects/vp_new/vp_logging.py\", line 293, in print_vp_resolve_log\n    _print_decomposition(result)\n  File \"/Users/sachinpb/PycharmProjects/vp_new/vp_logging.py\", line 89, in _print_decomposition\n    _print_kv(\"values\", \", \".join(clause.get(\"values\") or []), indent=5)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: sequence item 0: expected str instance, int found\n"
+        }
+      ]
+    },
+    {
+      "case": 56,
+      "input": "Get the average weekly revenue generated from a customer's outgoing calls in the past 4 weeks.",
+      "expected": "COMMON_FCT_DT >= CurrentWeek-4WEEKS AND SUM(V{AVG_WEEKLY_OG_VOICE_REV}=f{COMMON_OG_CALL_REVENUE/4}) ${operator} ${value}",
+      "status": "API_BLOCKED",
+      "expected_structure": {
+        "aggregation": "SUM",
+        "has_formula": true,
+        "formula_kind": "average_over_period",
+        "formula_divisor": "4",
+        "formula_factor": null,
+        "time_windows": [
+          {
+            "anchor": "CurrentWeek",
+            "n": "4",
+            "unit": "WEEKS",
+            "style": "lower_only"
+          }
+        ],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "actual_structure": {
+        "aggregation": null,
+        "has_formula": false,
+        "formula_kind": null,
+        "formula_divisor": null,
+        "formula_factor": null,
+        "time_windows": [],
+        "attribute_filters": [],
+        "duration_thresholds": [],
+        "count_constraints": []
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "http_status": 200,
+          "elapsed_s": 7.03,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "Column resolution failed: KPI resolution failed for kpi_text='revenue from outgoing calls': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+            "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+            "top_candidates": [
+              {
+                "seed_id": "S144_avg_formula_weeks_lower_only",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns:kpi_exception",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns:kpi_exception",
+            "stop_failure"
+          ],
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "has_formula mismatch: expected True, got False",
+            "formula_kind mismatch: expected 'average_over_period', got None",
+            "formula_divisor mismatch: expected '4', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentWeek', 'n': '4', 'unit': 'WEEKS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Get the average weekly revenue generated from a customer's outgoing calls in the past 4 weeks.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 formula\n     text: average weekly revenue generated from a customer's outgoing calls\n     agg_hint: FORMULA\n     kpi_text: revenue from outgoing calls\n  C2 time_window\n     text: in the past 4 weeks\n     time: 4 WEEKS\n     completed_period: false\n\nExtracted Features:\n  agg_type: FORMULA\n  kpi_text: revenue from outgoing calls\n  time_n: 4\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S144_avg_formula_weeks_lower_only\n  description: Average KPI over last N weeks using virtual formula and lower-only CurrentWeek window\n  score: 132\n  template: {date_col} >= CurrentWeek-{N}WEEKS AND SUM(V{{{vp_name}}}=f{{{kpi_col}/{divisor}}}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:FORMULA, formula_match:True, parameterized_match:False, groupby_match:False, time_unit_match:WEEKS, bound_style_match:lower_only\n  top_candidates:\n    - S144_avg_formula_weeks_lower_only score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  1. kpi\n     condition_text: revenue from outgoing calls\n     source_text: revenue from outgoing calls\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['revenue from outgoing calls'], 'check': False}\n     response:\n       status=http_error | http=500\n       body:\n       {'message': 'Error in workflow'}\n\nError:\n  Column resolution failed: KPI resolution failed for kpi_text='revenue from outgoing calls': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60691 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        },
+        {
+          "attempt": 2,
+          "http_status": 200,
+          "elapsed_s": 6.39,
+          "response": {
+            "ok": false,
+            "parent_condition": null,
+            "error": "Column resolution failed: KPI resolution failed for kpi_text='revenue generated from outgoing calls': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+            "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+            "top_candidates": [
+              {
+                "seed_id": "S144_avg_formula_weeks_lower_only",
+                "score": 132,
+                "warnings": []
+              }
+            ],
+            "trajectory": [
+              "parse_request",
+              "select_seed",
+              "resolve_columns:kpi_exception",
+              "stop_failure"
+            ]
+          },
+          "transport_error": null,
+          "parent_condition": null,
+          "selected_seed_id": "S144_avg_formula_weeks_lower_only",
+          "trajectory": [
+            "parse_request",
+            "select_seed",
+            "resolve_columns:kpi_exception",
+            "stop_failure"
+          ],
+          "api_failure": true,
+          "structurally_ok": false,
+          "compare_errors": [
+            "aggregation mismatch: expected 'SUM', got None",
+            "has_formula mismatch: expected True, got False",
+            "formula_kind mismatch: expected 'average_over_period', got None",
+            "formula_divisor mismatch: expected '4', got None",
+            "time_windows mismatch: expected [{'anchor': 'CurrentWeek', 'n': '4', 'unit': 'WEEKS', 'style': 'lower_only'}], got []"
+          ],
+          "log_excerpt": "\n================================================================================\nVP RESOLVE REQUEST\n================================================================================\nInput:\n  Get the average weekly revenue generated from a customer's outgoing calls in the past 4 weeks.\n\nClient:\n  -\n\nProviders:\n  decomposition: freellmapi | model=openai/gpt-oss-20b | base_url=http://localhost:3001/v1/\n  secondary: freellmapi | model=openai/gpt-oss-20b | reasoning=medium\n\nFlow:\n  1. parse_request      OK\n  2. select_seed        OK\n  3. resolve_columns    FAILED\n  4. render_condition   not_run\n  5. validate_output    not_run\n\nDecomposition:\n  C1 aggregation\n     text: average weekly revenue generated from a customer's outgoing calls\n     agg_hint: FORMULA\n     kpi_text: revenue generated from outgoing calls\n  C2 time_window\n     text: in the past 4 weeks\n     time: 4 WEEKS\n     completed_period: false\n\nExtracted Features:\n  agg_type: FORMULA\n  kpi_text: revenue generated from outgoing calls\n  time_n: 4\n  time_unit: WEEKS\n  is_completed_period: false\n  has_formula: true\n  has_count_constraint: false\n\nSelected Example:\n  seed_id: S144_avg_formula_weeks_lower_only\n  description: Average KPI over last N weeks using virtual formula and lower-only CurrentWeek window\n  score: 132\n  template: {date_col} >= CurrentWeek-{N}WEEKS AND SUM(V{{{vp_name}}}=f{{{kpi_col}/{divisor}}}) ${operator} ${value}\n  reasons: client_global_seed, can_be_main_condition, agg_match:FORMULA, formula_match:True, parameterized_match:False, groupby_match:False, time_unit_match:WEEKS, bound_style_match:lower_only\n  top_candidates:\n    - S144_avg_formula_weeks_lower_only score=132 warnings=[]\n\nResolved Columns And Conditions:\n  KPI: -\n  Extracted Conditions:\n    -\n\nVP_verify Calls:\n  1. kpi\n     condition_text: revenue generated from outgoing calls\n     source_text: revenue generated from outgoing calls\n     request: sent\n     url: http://localhost:5678/webhook/VP_verify\n     body:\n       {'conditions': ['revenue generated from outgoing calls'], 'check': False}\n     response:\n       status=http_error | http=500\n       body:\n       {'message': 'Error in workflow'}\n\nError:\n  Column resolution failed: KPI resolution failed for kpi_text='revenue generated from outgoing calls': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify\n\nResult:\n  ok: false\n================================================================================\nINFO:     127.0.0.1:60709 - \"POST /resolve HTTP/1.1\" 200 OK\n"
+        }
+      ]
+    }
+  ]
+}

@@ -1,11 +1,12 @@
 import os
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("LLM_PROVIDER", "groq")
 os.environ.setdefault("GROQ_API_KEY", "test-key")
 os.environ.setdefault("LANGSMITH_TRACING", "false")
 
-from renderer import render_seed_template
+from renderer import render_attribute_filter, render_duration_threshold, render_seed_template
 
 
 class RendererDateColumnTests(unittest.TestCase):
@@ -76,6 +77,33 @@ class RendererDateColumnTests(unittest.TestCase):
             "COMMON_Event_Date >= CurrentMonth-1MONTHS "
             "AND SUM(Total_Data_Revenue) ${operator} ${value}",
         )
+
+
+class RendererFallbackTests(unittest.TestCase):
+    @patch("renderer.resolve_condition_from_api", side_effect=Exception("VP_verify 500"))
+    def test_duration_threshold_falls_back_when_vp_verify_errors(self, _mock_resolve):
+        rendered = render_duration_threshold(
+            {
+                "text": "more than 35 days",
+                "operator_hint": ">",
+                "time_n": 35,
+                "time_unit": "DAYS",
+            }
+        )
+
+        self.assertEqual(rendered, "AON > 35")
+
+    @patch("renderer.resolve_condition_from_api", side_effect=Exception("VP_verify 500"))
+    def test_attribute_filter_falls_back_when_vp_verify_errors(self, _mock_resolve):
+        rendered = render_attribute_filter(
+            {
+                "text": "smartphone users",
+                "operator_hint": "=",
+                "values": ["smartphone"],
+            }
+        )
+
+        self.assertEqual(rendered, "Profile_Cdr_Handset_Type = smartphone")
 
 
 if __name__ == "__main__":

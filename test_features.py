@@ -197,7 +197,7 @@ class FormulaFeatureTests(unittest.TestCase):
             "any product",
         )
 
-    def test_product_presence_exact_month_uses_month_seed(self):
+    def test_product_presence_past_month_uses_rolling_days_seed(self):
         result = {
             "original_input": (
                 "List customers who purchased either product 123 or product 125 "
@@ -250,10 +250,10 @@ class FormulaFeatureTests(unittest.TestCase):
 
         self.assertEqual(features["agg_type"], "COUNT_ALL")
         self.assertEqual(features["kpi_text"], "product id")
-        self.assertEqual(features["time_unit"], "MONTHS")
-        self.assertEqual(features["time_n"], 1)
-        self.assertEqual(features["month_window_style"], "exact")
-        self.assertEqual(features["time_bound_style"], "exact")
+        self.assertEqual(features["time_unit"], "DAYS")
+        self.assertEqual(features["time_n"], 30)
+        self.assertIsNone(features["month_window_style"])
+        self.assertEqual(features["time_bound_style"], "lower_only")
         self.assertEqual(
             features["product_presence"],
             {"product_ids": ["123", "125"], "presence_direction": "present"},
@@ -273,7 +273,7 @@ class FormulaFeatureTests(unittest.TestCase):
         self.assertEqual(decision["status"], "MATCH_FOUND")
         self.assertEqual(
             decision["selected_seed"]["seed_id"],
-            "S153_product_presence_month_exact",
+            "S146_product_presence_days",
         )
 
     def test_product_presence_month_classifier_runs_when_time_unit_missing(self):
@@ -337,10 +337,10 @@ class FormulaFeatureTests(unittest.TestCase):
         ) as classifier:
             features = build_seed_features(result)
 
-        classifier.assert_called_once()
-        self.assertEqual(features["time_unit"], "MONTHS")
-        self.assertEqual(features["time_n"], 1)
-        self.assertEqual(features["month_window_style"], "exact")
+        classifier.assert_not_called()
+        self.assertEqual(features["time_unit"], "DAYS")
+        self.assertEqual(features["time_n"], 30)
+        self.assertIsNone(features["month_window_style"])
 
         from seeds import load_seeds
         from selector import choose_seed_or_report_ambiguity, select_seed_candidates_strict
@@ -356,7 +356,7 @@ class FormulaFeatureTests(unittest.TestCase):
         self.assertEqual(decision["status"], "MATCH_FOUND")
         self.assertEqual(
             decision["selected_seed"]["seed_id"],
-            "S153_product_presence_month_exact",
+            "S146_product_presence_days",
         )
 
     def test_product_presence_bounded_month_uses_bounded_seed(self):
@@ -647,7 +647,7 @@ class FormulaFeatureTests(unittest.TestCase):
 
         features = build_seed_features(result)
 
-        self.assertEqual(features["agg_type"], "SUM")
+        self.assertEqual(features["agg_type"], "RAW")
         self.assertEqual(features["kpi_text"], "data bundle revenue")
         self.assertEqual(features["time_unit"], "MONTHS")
         self.assertEqual(features["time_n"], 1)

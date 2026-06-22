@@ -256,6 +256,8 @@ structured semantic clauses and seed-selection intent.
 
 Return only one JSON object matching schema version 2.0.
 Do not return markdown, prose, explanations, comments, or a top-level array.
+The first character of the response must be "{" and the last character must be
+"}". Never wrap the JSON in ``` or ```json fences.
 
 Output shape:
 {
@@ -295,24 +297,60 @@ Splitting rules:
 - Do not put time phrases inside aggregation text or kpi_text.
 - Do not put filters inside kpi_text unless they are truly part of the KPI name.
 - Do not emit empty count_constraint or formula clauses.
+- Generic audience nouns by themselves are not filters: "customer", "customers",
+  "subscriber", "subscribers", "user", and "users" only identify the subject.
+  Do not emit an attribute_filter for them unless a concrete value is present.
+  This includes phrases with articles or prepositions such as "for a customer",
+  "by a customer", "for a subscriber", and "their customer".
 - "smartphone users", "iPhone users", "Indian users", "prepaid customers", and "active subscribers" are attribute_filter clauses.
+- For attribute_filter text, use the shortest resolvable value phrase, not the
+  full prepositional span. For example use text "prepaid" with values
+  ["prepaid"], text "smartphone" with values ["smartphone"], text "active"
+  with values ["active"], and text "Indian" with values ["Indian"].
+- Combined audience phrases can contain multiple independent filters. Split
+  phrases like nationality + device + status into separate attribute_filter
+  clauses when they name different business attributes.
+- Service, product-domain, rating, geography, and traffic descriptors belong in
+  the KPI when they describe what is measured. Do not turn descriptors like
+  voice services, data bundles, local financial services, roaming financial
+  services, international outgoing calls, on-net SMS, off-net SMS, IDD, free
+  data, bundled data, finance revenue, or pay-as-you-go usage into
+  attribute_filter clauses unless the phrase explicitly filters subscribers or
+  accounts by that value.
 - "last 2 days", "past 4 weeks", "last 3 months", and "current month till date" are time_window clauses.
 - "more than 65 active days", "network age greater than 50 days", and "on the network for more than 35 days" are duration_threshold clauses.
+- Use symbolic operators in operator_hint: "more than" and "greater than" -> ">";
+  "less than" -> "<"; "at least" -> ">="; "at most" -> "<="; "equals" -> "=".
 - Product IDs such as product 123 or 125 must be attribute_filter clauses with values ["123", "125"].
 - For "active or inactive", use one attribute_filter with values ["active", "inactive"].
 - For "smartphone or iPhone", use one attribute_filter with values ["smartphone", "iPhone"].
+- Preserve fixed threshold/filter clauses separately from the main KPI. Phrases
+  like "recharged more than 100", "count of X equals 2", or "age greater than
+  35" must not be merged into kpi_text.
 
 Aggregation rules:
 - "total", "revenue", "usage", and "amount" usually imply SUM.
 - "maximum", "highest", and "max" imply MAX.
 - "minimum", "lowest", and "min" imply MIN.
-- "average" and "avg" imply AVG unless the request asks for average over a period; then use formula intent.
+- "average" and "avg" imply AVG only when the user asks for a direct average
+  value. Average daily, weekly, or monthly over a named period is a formula
+  intent because the period count becomes a divisor.
 - "number of", "count of", and "how many" imply COUNT_ALL.
 - For pure filter requests like "prepaid customers", emit COUNT_ALL customers plus the filter.
 
 Time rules:
 - Rolling days: "last N days", "past N days", "over last N days" -> time_n=N, time_unit="DAYS", is_completed_period=false.
 - Rolling weeks: "last N weeks", "past N weeks", "over last N weeks" -> time_n=N, time_unit="WEEKS", is_completed_period=false.
+- Event-style singular month phrases can be rolling 30-day windows when they
+  describe purchases, subscriptions, events, received campaigns, recharges, or
+  usage "in the last month" rather than a pinned calendar month. In that case
+  use time_n=30, time_unit="DAYS", is_completed_period=false.
+- Product purchase/subscription presence with "past month", "last month", or
+  "over the last month" is a rolling 30-day product event window unless the
+  user explicitly says calendar month, M1, previous month, or completed month.
+  For purchase/bought/subscribed product presence, do not output
+  time_unit="MONTHS" for those colloquial phrases; output time_n=30 and
+  time_unit="DAYS".
 - Month windows:
   - "last N months", "past N months", "over last N months" -> time_n=N, time_unit="MONTHS".
   - "last month", "past month", "last one month" -> time_n=1, time_unit="MONTHS".
@@ -321,9 +359,37 @@ Time rules:
 
 Formula rules:
 - "20% of recharge amount" -> formula clause with agg_hint="FORMULA", kpi_text="recharge amount", formula.factor=0.2, seed_intent.formula_type="percentage_of_kpi".
+- Percentage threshold phrasings are formula clauses even when written as
+  questions about customers, such as "customers have 20% of their recharge
+  amount greater than threshold" or "20% of the value exceeds threshold". Do not
+  emit a customer attribute_filter for these phrasings. Recover the metric
+  phrase from the nearest noun before "where 20%" when needed.
 - Average daily, weekly, or monthly over a period -> average-over-period formula intent, seed_intent.agg_type="FORMULA", seed_intent.formula_type="average_over_period".
+- "average revenue over/past last N days/weeks/months" is also
+  average-over-period when the wording implies dividing the total by the period
+  count. In that case set the measurable clause agg_hint="FORMULA", not SUM or
+  AVG, and set seed_intent.agg_type="FORMULA".
+- If the original input contains "average daily", "average weekly", "average
+  monthly", or "average ... over/past N periods", never set agg_hint="SUM" for
+  the measurable clause. Use either a formula clause or an aggregation clause
+  with agg_hint="FORMULA".
+- For average-over-period, kpi_text must be the underlying metric being
+  averaged, without "average", "daily", "weekly", "monthly", or the time
+  phrase. The formula.divisor must be the explicit period count, e.g. 90 for
+  "average daily ... last 90 days" and 4 for "average weekly ... past 4 weeks".
 - formula.divisor should equal the period count when explicit.
 - Do not emit empty formula clauses.
+
+Count constraint rules:
+- A fixed count condition attached to a main KPI must be a count_constraint,
+  not a formula and not part of kpi_text.
+- For "where count of X equals N" or "with X count equal to N", put the counted
+  item and the number in values, for example values ["X", "N"], and set
+  seed_intent.has_count_constraint=true.
+- "number of recharge transactions ... in the last 90 days" can refer to a
+  precomputed recharge-count KPI rather than an absence/presence count. Do not
+  mark it as product/campaign/action-key absence unless the user says absent,
+  did not, not received, missing, zero, never, or no.
 
 seed_intent must contain:
 {

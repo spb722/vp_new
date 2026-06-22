@@ -99,13 +99,19 @@ def resolve_filter_clause(clause: dict) -> dict:
         candidates.append(f"{value} users")
         candidates.append(str(value))
 
+    last_error = None
+
     for text in candidates:
-        with vp_verify_lookup_context(
-            lookup_type="attribute_filter",
-            source_text=clause_text,
-            candidate_text=text,
-        ):
-            resolved = resolve_condition_from_api(text)
+        try:
+            with vp_verify_lookup_context(
+                lookup_type="attribute_filter",
+                source_text=clause_text,
+                candidate_text=text,
+            ):
+                resolved = resolve_condition_from_api(text)
+        except Exception as exc:
+            last_error = exc
+            continue
 
         if resolved["matched"]:
             return {
@@ -117,6 +123,21 @@ def resolve_filter_clause(clause: dict) -> dict:
                 "operator": clause.get("operator_hint") or ("IN_LIST" if len(values) > 1 else "="),
                 "raw_resolution": resolved,
             }
+
+    fallback_column = fallback_filter_column(clause)
+    if fallback_column:
+        return {
+            "matched": True,
+            "column": fallback_column,
+            "table_name": fallback_filter_table(fallback_column),
+            "datatype": "categorical",
+            "values": values,
+            "operator": clause.get("operator_hint") or ("IN_LIST" if len(values) > 1 else "="),
+            "raw_resolution": None,
+        }
+
+    if last_error is not None:
+        raise Exception(f"VP_verify failed while resolving filter column for clause: {clause}") from last_error
 
     raise Exception(f"Could not resolve filter column for clause: {clause}")
 
@@ -232,7 +253,7 @@ def render_seed_template(seed: dict, features: dict, kpi_mapping: dict) -> str:
         count_col = "L_AGG_MSISDN"
 
     # Special product override
-    elif features.get("product_presence"):
+    elif features.get("product_presence") and "{list_values}" in template:
         date_col = "SUBSCRIPTIONS_EVENT_DATE"
         key_col = "SUBSCRIPTIONS_Product_Id"
         count_col = "SUBSCRIPTIONS_Product_Id"
@@ -312,18 +333,63 @@ def resolve_filter_column(clause: dict) -> str:
         candidates.append(f"{value} users")
         candidates.append(str(value))
 
+    last_error = None
+
     for text in candidates:
-        with vp_verify_lookup_context(
-            lookup_type="attribute_filter",
-            source_text=clause_text,
-            candidate_text=text,
-        ):
-            resolved = resolve_condition_from_api(text)
+        try:
+            with vp_verify_lookup_context(
+                lookup_type="attribute_filter",
+                source_text=clause_text,
+                candidate_text=text,
+            ):
+                resolved = resolve_condition_from_api(text)
+        except Exception as exc:
+            last_error = exc
+            continue
 
         if resolved["matched"]:
             return resolved["column"]
 
+    fallback_column = fallback_filter_column(clause)
+    if fallback_column:
+        return fallback_column
+
+    if last_error is not None:
+        raise Exception(f"VP_verify failed while resolving filter column for clause: {clause}") from last_error
+
     raise Exception(f"Could not resolve filter column for clause: {clause}")
+
+
+def fallback_filter_column(clause: dict) -> str | None:
+    clause_text = str(clause.get("text") or "").lower()
+    values = [str(value).lower() for value in clause.get("values", [])]
+    combined = " ".join([clause_text, *values])
+
+    handset_terms = {"smartphone", "iphone", "feature phone", "keypad"}
+    if any(term in combined for term in handset_terms) or "handset" in combined or "device" in combined:
+        return "Profile_Cdr_Handset_Type"
+
+    if "nationality" in combined or "indian" in combined:
+        return "Profile_Cdr_Nationality"
+
+    if "active" in values or "inactive" in values or "subscriber status" in combined:
+        return "Profile_Cdr_Subscriber_Status"
+
+    if "prepaid" in combined or "postpaid" in combined:
+        return "Profile_Line_Type"
+
+    if "recharge" in combined or "recharged" in combined:
+        return "RECHARGE_Denomination"
+
+    return None
+
+
+def fallback_filter_table(column: str) -> str | None:
+    if column.startswith("Profile_"):
+        return "Profile_Cdr_group"
+    if column.startswith("RECHARGE_"):
+        return "Recharge_Seg_Fct"
+    return None
 
 
 def render_attribute_filter(clause: dict) -> str:
@@ -349,7 +415,10 @@ def render_attribute_filter(clause: dict) -> str:
         rendered_values = ";".join(values)
         return f"{column} IN LIST ({rendered_values})"
 
-    return f"{column} = {values[0]}"
+    operator = clause.get("operator_hint") or "="
+    if operator == "IN_LIST":
+        operator = "="
+    return f"{column} {operator} {values[0]}"
 
 
 def render_attribute_filters(features: dict) -> list:
@@ -387,16 +456,22 @@ def render_duration_threshold(clause: dict) -> str:
 
     column = None
 
+    last_error = None
+
     for text in candidate_texts:
         if not text:
             continue
 
-        with vp_verify_lookup_context(
-            lookup_type="duration_threshold",
-            source_text=clause.get("text", ""),
-            candidate_text=text,
-        ):
-            resolved = resolve_condition_from_api(text)
+        try:
+            with vp_verify_lookup_context(
+                lookup_type="duration_threshold",
+                source_text=clause.get("text", ""),
+                candidate_text=text,
+            ):
+                resolved = resolve_condition_from_api(text)
+        except Exception as exc:
+            last_error = exc
+            continue
 
         if resolved["matched"]:
             column = resolved["column"]
@@ -415,6 +490,14 @@ def render_duration_threshold(clause: dict) -> str:
 
 def render_filters(features: dict) -> list:
     rendered = []
+
+    if features.get("product_presence_as_filter"):
+        product_presence = features.get("product_presence") or {}
+        product_ids = product_presence.get("product_ids") or []
+        if product_ids:
+            rendered.append(f"SUBSCRIPTIONS_Product_Id IN LIST ({';'.join(product_ids)})")
+        if product_presence.get("time_unit") == "DAYS" and product_presence.get("time_n") is not None:
+            rendered.append(f"SUBSCRIPTIONS_EVENT_DATE >= CurrentTime-{product_presence['time_n']}DAYS")
 
     for clause in features.get("attribute_filters", []):
         attr_conditions = render_attribute_filter(clause)

@@ -1,0 +1,254 @@
+{
+  "cases": [
+    {
+      "case": 1,
+      "input": "Total revenue from finance voice services for usage recorded last 1 months",
+      "http_status": 200,
+      "elapsed_s": 55.7,
+      "response": {
+        "ok": false,
+        "parent_condition": null,
+        "error": "Column resolution failed: KPI not matched: revenue from finance voice services",
+        "selected_seed_id": "S164_raw_kpi_months_lower_only",
+        "top_candidates": [
+          {
+            "seed_id": "S164_raw_kpi_months_lower_only",
+            "score": 132,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns:kpi_failed",
+          "stop_failure"
+        ]
+      },
+      "error": null,
+      "parent_condition": null,
+      "has_time": false
+    },
+    {
+      "case": 2,
+      "input": "check the total revenue for a subscriber last 30 days",
+      "http_status": 200,
+      "elapsed_s": 26.14,
+      "response": {
+        "ok": true,
+        "parent_condition": "COMMON_FCT_DT >= CurrentTime-30DAYS AND Total_Revenue ${operator} ${value}",
+        "error": null,
+        "selected_seed_id": "S162_raw_kpi_days_lower_only",
+        "top_candidates": [
+          {
+            "seed_id": "S162_raw_kpi_days_lower_only",
+            "score": 132,
+            "warnings": []
+          },
+          {
+            "seed_id": "S95_join_msisdn_no_count",
+            "score": 125,
+            "warnings": []
+          },
+          {
+            "seed_id": "S127_airtel_join_simple_no_count",
+            "score": 125,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns",
+          "render_condition",
+          "validate_output"
+        ]
+      },
+      "error": null,
+      "parent_condition": "COMMON_FCT_DT >= CurrentTime-30DAYS AND Total_Revenue ${operator} ${value}",
+      "has_time": true
+    },
+    {
+      "case": 3,
+      "input": "total data bundle revenue of a customer for the last 1 months",
+      "http_status": 200,
+      "elapsed_s": 41.86,
+      "response": {
+        "ok": true,
+        "parent_condition": "COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Data_Bundle_Revenue ${operator} ${value}",
+        "error": null,
+        "selected_seed_id": "S164_raw_kpi_months_lower_only",
+        "top_candidates": [
+          {
+            "seed_id": "S164_raw_kpi_months_lower_only",
+            "score": 132,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns",
+          "render_condition",
+          "validate_output"
+        ]
+      },
+      "error": null,
+      "parent_condition": "COMMON_Event_Date >= CurrentMonth-1MONTHS AND COMMON_Data_Bundle_Revenue ${operator} ${value}",
+      "has_time": true
+    },
+    {
+      "case": 10,
+      "input": "Number of recharge transactions done by smartphone users in the last 90 days.",
+      "http_status": 200,
+      "elapsed_s": 60.6,
+      "response": {
+        "ok": true,
+        "parent_condition": "Profile_Cdr_Handset_Model = smartphone AND COMMON_FCT_DT >= CurrentTime-90DAYS AND Recharge_count ${operator} ${value}",
+        "error": null,
+        "selected_seed_id": "S162_raw_kpi_days_lower_only",
+        "top_candidates": [
+          {
+            "seed_id": "S162_raw_kpi_days_lower_only",
+            "score": 132,
+            "warnings": []
+          },
+          {
+            "seed_id": "S95_join_msisdn_no_count",
+            "score": 125,
+            "warnings": []
+          },
+          {
+            "seed_id": "S127_airtel_join_simple_no_count",
+            "score": 125,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns",
+          "render_condition",
+          "validate_output"
+        ]
+      },
+      "error": null,
+      "parent_condition": "Profile_Cdr_Handset_Model = smartphone AND COMMON_FCT_DT >= CurrentTime-90DAYS AND Recharge_count ${operator} ${value}",
+      "has_time": true
+    },
+    {
+      "case": 14,
+      "input": "total revenue of smartphone users in the last 60 days who were activated more than 65 days ago",
+      "http_status": 200,
+      "elapsed_s": 19.11,
+      "response": {
+        "ok": true,
+        "parent_condition": "Profile_Cdr_Handset_Model = smartphone AND CUST_360_ACTIVATION_DATE > 65 AND COMMON_FCT_DT >= CurrentTime-60DAYS AND Total_Revenue ${operator} ${value}",
+        "error": null,
+        "selected_seed_id": "S162_raw_kpi_days_lower_only",
+        "top_candidates": [
+          {
+            "seed_id": "S162_raw_kpi_days_lower_only",
+            "score": 132,
+            "warnings": []
+          },
+          {
+            "seed_id": "S95_join_msisdn_no_count",
+            "score": 125,
+            "warnings": []
+          },
+          {
+            "seed_id": "S127_airtel_join_simple_no_count",
+            "score": 125,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns",
+          "render_condition",
+          "validate_output"
+        ]
+      },
+      "error": null,
+      "parent_condition": "Profile_Cdr_Handset_Model = smartphone AND CUST_360_ACTIVATION_DATE > 65 AND COMMON_FCT_DT >= CurrentTime-60DAYS AND Total_Revenue ${operator} ${value}",
+      "has_time": true
+    },
+    {
+      "case": 26,
+      "input": "revenue from local voice subscription services for smartphone users in the current month till date",
+      "http_status": 200,
+      "elapsed_s": 82.1,
+      "response": {
+        "ok": false,
+        "parent_condition": null,
+        "error": "Column resolution failed: KPI resolution failed for kpi_text='revenue from local voice subscription services': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+        "selected_seed_id": "S178_raw_kpi_month_mtd",
+        "top_candidates": [
+          {
+            "seed_id": "S178_raw_kpi_month_mtd",
+            "score": 132,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns:kpi_exception",
+          "stop_failure"
+        ]
+      },
+      "error": null,
+      "parent_condition": null,
+      "has_time": false
+    },
+    {
+      "case": 28,
+      "input": "Data Revenue from local financial services in week 6 for smartphone users who have been on the network for more than 35 days",
+      "http_status": 200,
+      "elapsed_s": 47.99,
+      "response": {
+        "ok": false,
+        "parent_condition": null,
+        "error": "Column resolution failed: Filter resolution failed for attribute_filter text='smartphone' values=['smartphone']; duration_threshold text='more than 35 days' time=35 'DAYS': 500 Server Error: Internal Server Error for url: http://localhost:5678/webhook/VP_verify",
+        "selected_seed_id": "S179_raw_kpi_week_exact",
+        "top_candidates": [
+          {
+            "seed_id": "S179_raw_kpi_week_exact",
+            "score": 132,
+            "warnings": []
+          }
+        ],
+        "trajectory": [
+          "parse_request",
+          "select_seed",
+          "resolve_columns:filter_exception",
+          "stop_failure"
+        ]
+      },
+      "error": null,
+      "parent_condition": null,
+      "has_time": false
+    },
+    {
+      "case": 29,
+      "input": "Revenue from Total Roaming financial services in last 4 weeks for smartphone users who recharged more than 100 and have been on the network for more than 35 days.",
+      "http_status": 500,
+      "elapsed_s": 42.26,
+      "response": null,
+      "error": "Internal Server Error",
+      "parent_condition": null,
+      "has_time": false
+    },
+    {
+      "case": 31,
+      "input": "Revenue from data roaming financial services in month 1 for smartphone users who recharged more than 100 and have been on the network for more than 35 days.",
+      "http_status": 500,
+      "elapsed_s": 46.93,
+      "response": null,
+      "error": "Internal Server Error",
+      "parent_condition": null,
+      "has_time": false
+    }
+  ]
+}

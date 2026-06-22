@@ -4,4 +4,8 @@ __pycache__/
 *.pyo
 .ipynb_checkpoints/
 data/vp_verify_cache.db
+data/vp_verify_cache.db-shm
+data/vp_verify_cache.db-wal
 vp_resolver_clean_notebook.py
+uvicorn.log
+vp_rag.ipynb

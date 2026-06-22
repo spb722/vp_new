@@ -50,6 +50,10 @@ Analyze only the month-window meaning in the supplied original input and
 decomposition. Ignore KPI, product, customer, and filter wording when deciding
 the month style.
 
+Use the decomposition as a guardrail: if the decomposition already represents
+an event-style "last month" phrase as a rolling 30 DAYS window, return style
+"none" so this classifier does not override it into a calendar-month seed.
+
 Do not:
 - Resolve database columns.
 - Generate a parent condition.
@@ -58,6 +62,8 @@ Do not:
 
 Output requirements:
 - Return exactly one complete JSON object matching the supplied JSON Schema.
+- The first character of the response must be "{" and the last character must
+  be "}". Never wrap the JSON in ``` or ```json fences.
 - Include every required field.
 - Use only the allowed enum values.
 - Never truncate strings.
@@ -104,6 +110,10 @@ Allowed styles:
 
 5. none
    No month window is present.
+   Also use none when "last month" is being used colloquially as a rolling
+   recent-period phrase for purchases, subscriptions, events, received
+   campaigns, recharges, or usage and the decomposition has already captured
+   that as 30 DAYS.
 
 6. unknown
    Month wording exists, but the semantics are unclear.
