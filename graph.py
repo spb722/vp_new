@@ -239,6 +239,28 @@ def select_seed(state: VPState) -> dict:
 
 # ── Node 3: resolve_columns ────────────────────────────────────────────────
 
+def _format_kpi_unmatched_reason(kpi_mapping: dict | None) -> str | None:
+    raw_response = (kpi_mapping or {}).get("raw_response") or {}
+    output = raw_response.get("output") or {}
+    unmatched = output.get("unmatched") or []
+
+    reasons = []
+    for item in unmatched:
+        reason = item.get("reason") if isinstance(item, dict) else None
+        if reason:
+            reasons.append(str(reason).strip())
+
+    return " ".join(dict.fromkeys(reason for reason in reasons if reason))
+
+
+def _format_kpi_not_matched_error(kpi_text: str, kpi_mapping: dict | None) -> str:
+    error = f"KPI not matched: {kpi_text}"
+    reason = _format_kpi_unmatched_reason(kpi_mapping)
+    if reason:
+        error = f"{error} {reason}"
+    return error
+
+
 def resolve_columns(state: VPState) -> dict:
     """
     Call the VP_verify API to resolve the main KPI column and all filter
@@ -274,7 +296,10 @@ def resolve_columns(state: VPState) -> dict:
             "kpi_mapping": kpi_mapping,
             "filter_conditions": [],
             "columns_ok": False,
-            "columns_error": f"KPI not matched: {features['kpi_text']}",
+            "columns_error": _format_kpi_not_matched_error(
+                features["kpi_text"],
+                kpi_mapping,
+            ),
             "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_failed"],
         }
 

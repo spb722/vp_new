@@ -66,6 +66,54 @@ class GraphDecompositionTests(unittest.TestCase):
         self.assertIn("smartphone users", result["columns_error"])
         self.assertNotIn("resolving kpi_text", result["columns_error"])
 
+    def test_resolve_columns_appends_kpi_unmatched_reason(self):
+        state = {
+            "features": {
+                "kpi_text": "recharges",
+                "attribute_filters": [],
+                "duration_thresholds": [],
+            },
+            "trajectory": ["parse_request", "select_seed"],
+        }
+
+        kpi_mapping = {
+            "matched": False,
+            "input": "recharges",
+            "kpi_col": None,
+            "table_name": None,
+            "datatype": None,
+            "raw_response": {
+                "output": {
+                    "matches": [],
+                    "unmatched": [
+                        {
+                            "condition": "recharges",
+                            "reason": (
+                                "No KPI matches the generic recharge count "
+                                "without denomination restriction."
+                            ),
+                        }
+                    ],
+                }
+            },
+        }
+
+        with patch.object(graph, "resolve_kpi_from_api", return_value=kpi_mapping):
+            result = graph.resolve_columns(state)
+
+        self.assertFalse(result["columns_ok"])
+        self.assertEqual(
+            result["columns_error"],
+            (
+                "KPI not matched: recharges "
+                "No KPI matches the generic recharge count without denomination restriction."
+            ),
+        )
+        self.assertEqual(
+            result["trajectory"],
+            ["parse_request", "select_seed", "resolve_columns:kpi_failed"],
+        )
+
     def test_validate_output_rejects_uppercase_structural_placeholder(self):
         result = graph.validate_output(
             {
