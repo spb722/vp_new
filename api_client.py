@@ -90,7 +90,7 @@ def _get_db() -> sqlite3.Connection:
 @traceable(run_type="tool", name="VP_verify")
 def call_vp_verify(condition_text: str) -> dict:
     now = time.time()
-    payload = {"conditions": [condition_text], "check": False}
+    payload = {"conditions": [condition_text]}
 
     # ── L1: in-memory ──────────────────────────────────────────────────────────
     cached = _VP_VERIFY_CACHE.get(condition_text)
@@ -522,7 +522,7 @@ def _kpi_negative_cache_get(text: str) -> dict | None:
     _record_vp_verify_event({
         "condition_text": text,
         "url": VP_VERIFY_URL,
-        "payload": {"conditions": [text], "check": False},
+        "payload": {"conditions": [text]},
         "source": "kpi_negative_cache",
         "request_sent": False,
         "status": "cache_hit_negative",

@@ -99,7 +99,7 @@ class VPVerifyTraceTests(unittest.TestCase):
         self.assertEqual(event["condition_text"], condition_text)
         self.assertEqual(
             event["payload"],
-            {"conditions": [condition_text], "check": False},
+            {"conditions": [condition_text]},
         )
         self.assertEqual(event["status"], "ok")
         self.assertEqual(event["status_code"], 200)
