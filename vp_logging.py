@@ -38,7 +38,8 @@ def _status_for_step(trajectory: list[str], step: str, ok: bool) -> str:
     if not matching:
         return "not_run"
 
-    if any("failed" in item or "exception" in item for item in matching):
+    latest = matching[-1]
+    if "failed" in latest or "exception" in latest:
         return "FAILED"
 
     if step == "validate_output" and not ok:
@@ -52,6 +53,7 @@ def _print_flow(result: dict) -> None:
     ok = bool(result.get("ok"))
     steps = [
         ("parse_request", "parse_request"),
+        ("verify_decomposition", "verify_decomposition"),
         ("select_seed", "select_seed"),
         ("resolve_columns", "resolve_columns"),
         ("render_condition", "render_condition"),
@@ -64,6 +66,9 @@ def _print_flow(result: dict) -> None:
 
     if result.get("retry_count", 0):
         _print_kv("retries", result["retry_count"])
+
+    if result.get("decomposition_attempt", 0):
+        _print_kv("decomposition_attempts", result["decomposition_attempt"])
 
 
 def _print_decomposition(result: dict) -> None:
@@ -154,6 +159,51 @@ def _print_features(result: dict) -> None:
             print(f"    - text: {_format_value(clause.get('text'))}")
             print(f"      values: {values}")
             print(f"      operator: {_format_value(clause.get('operator_hint'))}")
+
+
+def _print_decomposition_verifier(result: dict) -> None:
+    verified = result.get("decomposition_verified")
+    judges = result.get("decomposition_judges") or []
+    attempt_log = result.get("decomposition_attempt_log") or []
+
+    print("\nDecomposition Verifier:")
+    if verified is None and not judges and not attempt_log:
+        print("  -")
+        return
+
+    _print_kv("verified", _format_value(verified))
+
+    if attempt_log:
+        for attempt in attempt_log:
+            status = "PASS" if attempt.get("verified") else "FAIL"
+            print(f"  attempt {attempt.get('attempt', '?')}: {status}")
+            for judge in attempt.get("judge_results") or []:
+                _print_judge_result(judge, indent=4)
+            if attempt.get("feedback"):
+                _print_kv("feedback", attempt.get("feedback"), indent=4)
+        return
+
+    for judge in judges:
+        _print_judge_result(judge, indent=2)
+
+    feedback = result.get("decomposition_feedback")
+    if feedback:
+        _print_kv("feedback", feedback)
+
+
+def _print_judge_result(judge: dict, indent: int = 2) -> None:
+    prefix = " " * indent
+    failure_prefix = " " * (indent + 2)
+    status = "PASS" if judge.get("passed") else "FAIL"
+    print(f"{prefix}{judge.get('judge', '?')}: {status}")
+    for failure in judge.get("failures") or []:
+        print(
+            f"{failure_prefix}- "
+            f"field={_format_value(failure.get('field'))}; "
+            f"expected={_format_value(failure.get('expected'))}; "
+            f"actual={_format_value(failure.get('actual'))}; "
+            f"reason={_format_value(failure.get('reason'))}"
+        )
 
 
 def _print_selected_seed(result: dict) -> None:
@@ -296,6 +346,7 @@ def print_vp_resolve_log(request, result: dict) -> None:
     _print_flow(result)
     _print_decomposition(result)
     _print_features(result)
+    _print_decomposition_verifier(result)
     _print_selected_seed(result)
     _print_resolved_output(result)
     _print_vp_verify_trace(result)

@@ -1,6 +1,7 @@
 import contextvars
 from contextlib import contextmanager
 import json
+import re
 import sqlite3
 import time
 import requests
@@ -8,15 +9,25 @@ import urllib3
 
 from langsmith import traceable
 
-from config import VP_VERIFY_URL, DATA_DIR
+from config import (
+    MODEL,
+    VP_VERIFY_TIMEOUT_SECONDS,
+    VP_VERIFY_URL,
+    DATA_DIR,
+    chat_completion_options,
+    get_client,
+)
 from features import clean_for_api
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ── Cache config ───────────────────────────────────────────────────────────────
 VP_VERIFY_CACHE_TTL = 3600  # seconds (1 hour)
+KPI_NEGATIVE_CACHE_TTL = 300  # seconds (5 minutes)
+KPI_MAX_RESOLUTION_ATTEMPTS = 3
 
 _VP_VERIFY_CACHE: dict[str, tuple[dict, float]] = {}  # L1: in-memory (per session)
+_KPI_NEGATIVE_CACHE: dict[str, tuple[dict, float]] = {}
 _db_conn: sqlite3.Connection | None = None             # L2: SQLite (persistent)
 _VP_VERIFY_TRACE = contextvars.ContextVar("vp_verify_trace", default=None)
 _VP_VERIFY_CONTEXT = contextvars.ContextVar("vp_verify_context", default=None)
@@ -121,7 +132,12 @@ def call_vp_verify(condition_text: str) -> dict:
     # ── Miss: call VP_verify API ───────────────────────────────────────────────
     response = None
     try:
-        response = requests.post(VP_VERIFY_URL, json=payload, verify=False, timeout=3000)
+        response = requests.post(
+            VP_VERIFY_URL,
+            json=payload,
+            verify=False,
+            timeout=VP_VERIFY_TIMEOUT_SECONDS,
+        )
         response_json = None
         response_text = None
 
@@ -389,12 +405,197 @@ def resolve_attribute_value_with_api(value: str, original_clause_text: str | Non
     }
 
 
+KPI_QUALIFIER_GROUPS = {
+    "free": {"free"},
+    "bundled": {"bundled", "bundle"},
+    "onnet": {"onnet", "on-net", "on net"},
+    "offnet": {"offnet", "off-net", "off net"},
+    "sms": {"sms"},
+    "voice": {"voice"},
+    "data": {"data"},
+    "finance": {"finance", "financial"},
+    "revenue": {"revenue", "rev"},
+    "recharge": {"recharge", "recharges"},
+}
+
+
+def _normalize_match_text(text: str | None) -> str:
+    text = clean_for_api(text) or ""
+    text = text.replace("_", " ")
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _text_has_any(text: str, variants: set[str]) -> bool:
+    padded = f" {text} "
+    return any(f" {_normalize_match_text(variant)} " in padded for variant in variants)
+
+
+def _kpi_failure_reason(resolved: dict | None) -> str:
+    raw_response = (resolved or {}).get("raw_response") or {}
+    output = raw_response.get("output") or {}
+    unmatched = output.get("unmatched") or []
+    reasons = []
+
+    for item in unmatched:
+        if isinstance(item, dict) and item.get("reason"):
+            reasons.append(str(item["reason"]).strip())
+
+    if reasons:
+        return " ".join(dict.fromkeys(reason for reason in reasons if reason))
+
+    if resolved and resolved.get("matched") is False:
+        return "VP_verify returned no matches."
+
+    return "KPI match was rejected as low-confidence or semantically inconsistent."
+
+
+def _kpi_match_rejection_reason(source_text: str | None, resolved: dict) -> str | None:
+    if not resolved.get("matched"):
+        return _kpi_failure_reason(resolved)
+
+    raw_match = resolved.get("raw_match") or {}
+    raw_response = resolved.get("raw_response") or {}
+    if not raw_match and not raw_response:
+        return None
+
+    target_text = _normalize_match_text(
+        " ".join(
+            str(part)
+            for part in [
+                raw_match.get("condition"),
+                raw_match.get("kpi"),
+                raw_match.get("table_name"),
+                resolved.get("column"),
+            ]
+            if part
+        )
+    )
+    source = _normalize_match_text(source_text)
+
+    if not target_text:
+        return "VP_verify matched but returned no comparable match text."
+
+    missing = []
+    for label, variants in KPI_QUALIFIER_GROUPS.items():
+        if _text_has_any(source, variants) and not _text_has_any(target_text, variants):
+            missing.append(label)
+
+    if missing:
+        return (
+            "VP_verify match dropped required KPI qualifier(s): "
+            + ", ".join(missing)
+            + "."
+        )
+
+    mismatch = (raw_response.get("output") or {}).get("mismatch_percentage")
+    if isinstance(mismatch, (int, float)) and mismatch > 25:
+        return f"VP_verify mismatch_percentage is too high: {mismatch}."
+
+    return None
+
+
+def _format_kpi_resolution(resolved: dict, resolved_from: str, attempts: list[dict]) -> dict:
+    return {
+        "matched": resolved["matched"],
+        "input": resolved_from,
+        "kpi_col": resolved["column"],
+        "table_name": resolved["table_name"],
+        "datatype": resolved["datatype"],
+        "date_column": resolved.get("date_column"),
+        "raw_match": resolved.get("raw_match"),
+        "raw_response": resolved.get("raw_response"),
+        "attempt_log": attempts,
+    }
+
+
+def _kpi_negative_cache_get(text: str) -> dict | None:
+    cached = _KPI_NEGATIVE_CACHE.get(text)
+    if not cached:
+        return None
+
+    result, expires_at = cached
+    if time.time() >= expires_at:
+        _KPI_NEGATIVE_CACHE.pop(text, None)
+        return None
+
+    _record_vp_verify_event({
+        "condition_text": text,
+        "url": VP_VERIFY_URL,
+        "payload": {"conditions": [text], "check": False},
+        "source": "kpi_negative_cache",
+        "request_sent": False,
+        "status": "cache_hit_negative",
+        "response": result.get("raw_response"),
+        "matches_count": 0,
+        "unmatched_count": len(
+            ((result.get("raw_response") or {}).get("output") or {}).get("unmatched") or []
+        ),
+    })
+    return result
+
+
+def _kpi_negative_cache_set(text: str, result: dict) -> None:
+    _KPI_NEGATIVE_CACHE[text] = (result, time.time() + KPI_NEGATIVE_CACHE_TTL)
+
+
+def _resolve_condition_with_kpi_negative_cache(text: str) -> dict:
+    cached = _kpi_negative_cache_get(text)
+    if cached is not None:
+        return cached
+
+    resolved = resolve_condition_from_api(text)
+    if not resolved.get("matched"):
+        _kpi_negative_cache_set(text, resolved)
+    return resolved
+
+
+def reformulate_kpi_text(
+    original_text: str,
+    failed_reason: str,
+    tried_phrasings: list[str],
+) -> str | None:
+    prompt = {
+        "role": "user",
+        "content": (
+            "Reformulate this telecom KPI phrase so a KPI lookup service can "
+            "resolve it. Preserve all semantic qualifiers such as free, bundled, "
+            "on-net, off-net, SMS, voice, data, finance, recharge, revenue, and usage. "
+            "Return strict JSON only: {\"kpi_text\": \"...\"}.\n\n"
+            f"Original KPI phrase: {original_text}\n"
+            f"Failed reason: {failed_reason}\n"
+            f"Already tried: {tried_phrasings}"
+        ),
+    }
+
+    response = get_client().chat.completions.create(
+        model=MODEL,
+        temperature=0,
+        **chat_completion_options(),
+        messages=[
+            {
+                "role": "system",
+                "content": "You rewrite telecom KPI lookup phrases. Return only JSON.",
+            },
+            prompt,
+        ],
+    )
+    content = response.choices[0].message.content or ""
+
+    try:
+        parsed = json.loads(content)
+    except ValueError:
+        return clean_for_api(content.strip().strip('"')) or None
+
+    return clean_for_api(parsed.get("kpi_text")) if isinstance(parsed, dict) else None
+
+
 def resolve_kpi_from_api(kpi_text: str | None) -> dict:
     """
     Wrapper for aggregation KPI resolution.
     Keeps output names: kpi_col, table_name, datatype.
 
-    Adds fallback for generic count/product/campaign cases.
+    Uses a bounded reason-driven loop for KPI lookup reformulation.
     """
 
     cleaned_text = clean_for_api(kpi_text)
@@ -436,54 +637,110 @@ def resolve_kpi_from_api(kpi_text: str | None) -> dict:
             "raw_response": None
         }
 
-    candidates = [cleaned_text]
-
-    if cleaned_text and "revenue" in cleaned_text:
-        if "data" in cleaned_text:
-            candidates.extend(["total data revenue", "data revenue"])
-        if "voice" in cleaned_text:
-            candidates.extend(["total voice revenue", "voice revenue"])
-        if "sms" in cleaned_text:
-            candidates.extend(["total sms revenue", "sms revenue"])
-        candidates.append("total revenue")
-
+    candidates = [cleaned_text] if cleaned_text else []
+    attempts = []
+    tried = []
     first_error = None
-    resolved = None
-    resolved_from = cleaned_text
+    last_resolution = None
+    last_reason = None
 
-    for candidate in dict.fromkeys(item for item in candidates if item):
+    for attempt_number in range(1, KPI_MAX_RESOLUTION_ATTEMPTS + 1):
+        candidate = candidates[-1] if candidates else None
+        if not candidate:
+            break
+
+        if candidate in tried:
+            last_reason = f"Reformulation repeated already-tried phrasing: {candidate}"
+            break
+
+        tried.append(candidate)
         try:
             with vp_verify_lookup_context(
                 lookup_type="kpi",
                 source_text=cleaned_text,
                 candidate_text=candidate,
+                kpi_attempt=attempt_number,
+                feedback_reason=last_reason,
             ):
-                candidate_resolution = resolve_condition_from_api(candidate)
+                candidate_resolution = _resolve_condition_with_kpi_negative_cache(candidate)
         except Exception as exc:
             if first_error is None:
                 first_error = exc
-            continue
+            last_reason = str(exc)
+            attempts.append({
+                "attempt": attempt_number,
+                "phrasing": candidate,
+                "matched": False,
+                "accepted": False,
+                "reason": last_reason,
+                "exception": True,
+            })
+        else:
+            last_resolution = candidate_resolution
+            rejection_reason = _kpi_match_rejection_reason(candidate, candidate_resolution)
+            attempts.append({
+                "attempt": attempt_number,
+                "phrasing": candidate,
+                "matched": bool(candidate_resolution.get("matched")),
+                "accepted": rejection_reason is None,
+                "reason": rejection_reason,
+                "column": candidate_resolution.get("column"),
+                "table_name": candidate_resolution.get("table_name"),
+            })
 
-        if candidate_resolution["matched"]:
-            resolved = candidate_resolution
-            resolved_from = candidate
+            if rejection_reason is None:
+                return _format_kpi_resolution(candidate_resolution, candidate, attempts)
+
+            last_reason = rejection_reason
+
+        if attempt_number >= KPI_MAX_RESOLUTION_ATTEMPTS:
             break
 
-        if resolved is None:
-            resolved = candidate_resolution
+        try:
+            reformulated = reformulate_kpi_text(
+                original_text=cleaned_text or "",
+                failed_reason=last_reason or "No match.",
+                tried_phrasings=tried,
+            )
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+            attempts.append({
+                "attempt": attempt_number,
+                "phrasing": candidate,
+                "matched": False,
+                "accepted": False,
+                "reason": f"KPI reformulation failed: {exc}",
+                "exception": True,
+                "stage": "reformulation",
+            })
+            break
 
-    if resolved is None:
+        reformulated = clean_for_api(reformulated)
+        if not reformulated or reformulated in tried:
+            last_reason = (
+                "KPI reformulation produced no new phrasing."
+                if not reformulated
+                else f"KPI reformulation repeated phrasing: {reformulated}"
+            )
+            break
+
+        candidates.append(reformulated)
+
+    if last_resolution is None and first_error is not None:
         raise first_error
 
     return {
-        "matched": resolved["matched"],
-        "input": resolved_from,
-        "kpi_col": resolved["column"],
-        "table_name": resolved["table_name"],
-        "datatype": resolved["datatype"],
-        "date_column": resolved.get("date_column"),
-        "raw_match": resolved.get("raw_match"),
-        "raw_response": resolved.get("raw_response")
+        "matched": False,
+        "input": tried[-1] if tried else cleaned_text,
+        "kpi_col": None,
+        "table_name": None,
+        "datatype": None,
+        "date_column": None,
+        "raw_match": (last_resolution or {}).get("raw_match"),
+        "raw_response": (last_resolution or {}).get("raw_response"),
+        "attempt_log": attempts,
+        "failure_reason": last_reason or "KPI not found after bounded resolution loop.",
     }
 
 

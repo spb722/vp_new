@@ -47,6 +47,13 @@ def get_llm_api_key(provider: str | None = None) -> str | None:
     return None
 
 
+def get_bool_env(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 DATA_DIR = Path(os.getenv("VP_DATA_DIR", "./data"))
 
 LLM_PROVIDER = normalize_llm_provider(os.getenv("LLM_PROVIDER"))
@@ -71,47 +78,71 @@ OPENROUTER_REQUIRE_PARAMETERS = (
     in ("1", "true", "yes")
 )
 
-VP_VERIFY_URL = "http://localhost:5678/webhook/VP_verify"
+VP_VERIFY_URL = os.getenv("VP_VERIFY_URL", "http://localhost:5678/webhook/VP_verify")
+VP_VERIFY_TIMEOUT_SECONDS = float(os.getenv("VP_VERIFY_TIMEOUT_SECONDS", "300"))
+VP_VERIFY_INCLUDE_TIME_IN_KPI = get_bool_env("VP_VERIFY_INCLUDE_TIME_IN_KPI", True)
 #VP_VERIFY_URL = "http://10.0.11.179:5678/webhook/VP_verify"
 #
 
-if LLM_PROVIDER == "groq":
-    from groq import Groq
+_client = None
+_decomposition_client = None
 
-    _api_key = get_llm_api_key(LLM_PROVIDER)
-    if not _api_key:
-        raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
-    client = Groq(api_key=_api_key)
-elif LLM_PROVIDER == "openrouter":
-    _api_key = get_llm_api_key(LLM_PROVIDER)
-    if not _api_key:
-        raise EnvironmentError("OPENROUTER_API_KEY environment variable is not set.")
-    client = OpenAI(
-        api_key=_api_key,
-        base_url=LLM_BASE_URL or "https://openrouter.ai/api/v1",
-    )
-elif LLM_PROVIDER == "freellmapi":
-    _api_key = get_llm_api_key(LLM_PROVIDER)
-    if not _api_key:
+
+def validate_runtime_config() -> None:
+    if LLM_PROVIDER not in {"groq", "openrouter", "freellmapi"}:
+        raise ValueError(
+            "Unsupported LLM_PROVIDER. Expected 'groq', 'openrouter', "
+            "or 'freellmapi', "
+            f"got {LLM_PROVIDER!r}."
+        )
+
+    if not get_llm_api_key(LLM_PROVIDER):
+        if LLM_PROVIDER == "groq":
+            raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
+        if LLM_PROVIDER == "openrouter":
+            raise EnvironmentError("OPENROUTER_API_KEY environment variable is not set.")
         raise EnvironmentError(
             "LLM_API_KEY or LLM_APIKEY environment variable is not set "
             "for freellmapi."
         )
-    client = OpenAI(
-        api_key=_api_key,
-        base_url=LLM_BASE_URL or "http://localhost:3001/v1/",
-    )
-else:
-    raise ValueError(
-        "Unsupported LLM_PROVIDER. Expected 'groq', 'openrouter', "
-        "or 'freellmapi', "
-        f"got {LLM_PROVIDER!r}."
-    )
 
-decomposition_client = OpenAI(
-    api_key=DECOMPOSITION_API_KEY,
-    base_url=DECOMPOSITION_BASE_URL,
-)
+    if VP_VERIFY_TIMEOUT_SECONDS <= 0:
+        raise ValueError("VP_VERIFY_TIMEOUT_SECONDS must be greater than 0.")
+
+
+def get_client():
+    global _client
+    if _client is not None:
+        return _client
+
+    validate_runtime_config()
+
+    if LLM_PROVIDER == "groq":
+        from groq import Groq
+
+        _client = Groq(api_key=get_llm_api_key(LLM_PROVIDER))
+    elif LLM_PROVIDER == "openrouter":
+        _client = OpenAI(
+            api_key=get_llm_api_key(LLM_PROVIDER),
+            base_url=LLM_BASE_URL or "https://openrouter.ai/api/v1",
+        )
+    elif LLM_PROVIDER == "freellmapi":
+        _client = OpenAI(
+            api_key=get_llm_api_key(LLM_PROVIDER),
+            base_url=LLM_BASE_URL or "http://localhost:3001/v1/",
+        )
+
+    return _client
+
+
+def get_decomposition_client():
+    global _decomposition_client
+    if _decomposition_client is None:
+        _decomposition_client = OpenAI(
+            api_key=DECOMPOSITION_API_KEY,
+            base_url=DECOMPOSITION_BASE_URL,
+        )
+    return _decomposition_client
 
 
 def chat_completion_options() -> dict:
@@ -145,16 +176,3 @@ def decomposition_chat_completion_options() -> dict:
     return {
         "max_tokens": DECOMPOSITION_MAX_TOKENS,
     }
-
-
-print(
-    f"{LLM_PROVIDER} client ready. Model: {MODEL}. "
-    f"Reasoning effort: {REASONING_EFFORT}. "
-    f"Max completion tokens: {MAX_COMPLETION_TOKENS}"
-)
-print(
-    f"{DECOMPOSITION_LLM_PROVIDER} decomposition client ready. "
-    f"Model: {DECOMPOSITION_MODEL}. "
-    f"Base URL: {DECOMPOSITION_BASE_URL}. "
-    f"Max tokens: {DECOMPOSITION_MAX_TOKENS}"
-)

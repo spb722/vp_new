@@ -110,6 +110,77 @@ class VPVerifyTraceTests(unittest.TestCase):
             "COMMON_Event_Date",
         )
 
+    def test_resolve_kpi_reformulates_after_miss(self):
+        api_client._KPI_NEGATIVE_CACHE.clear()
+        miss = {
+            "matched": False,
+            "input": "free data revenue",
+            "column": None,
+            "table_name": None,
+            "datatype": None,
+            "raw_response": {
+                "output": {
+                    "matches": [],
+                    "unmatched": [
+                        {"condition": "free data revenue", "reason": "not found"}
+                    ],
+                }
+            },
+        }
+        hit = {
+            "matched": True,
+            "input": "revenue from free data usage",
+            "column": "COMMON_Data_Free_Revenue",
+            "table_name": "Common_Seg_Fct",
+            "datatype": "number",
+            "date_column": "COMMON_Event_Date",
+            "raw_match": {
+                "condition": "free data revenue",
+                "kpi": "COMMON_Data_Free_Revenue",
+            },
+            "raw_response": {"output": {"matches": [], "unmatched": []}},
+        }
+
+        with patch.object(api_client, "resolve_condition_from_api", side_effect=[miss, hit]):
+            with patch.object(
+                api_client,
+                "reformulate_kpi_text",
+                return_value="revenue from free data usage",
+            ):
+                result = api_client.resolve_kpi_from_api("free data revenue")
+
+        self.assertTrue(result["matched"])
+        self.assertEqual(result["input"], "revenue from free data usage")
+        self.assertEqual(result["kpi_col"], "COMMON_Data_Free_Revenue")
+        self.assertEqual(len(result["attempt_log"]), 2)
+
+    def test_resolve_kpi_rejects_match_that_drops_qualifier(self):
+        api_client._KPI_NEGATIVE_CACHE.clear()
+        bad_hit = {
+            "matched": True,
+            "input": "free data revenue",
+            "column": "Total_Data_usage",
+            "table_name": "Instant_cdr_group",
+            "datatype": "numeric",
+            "date_column": None,
+            "raw_match": {
+                "condition": "pay-as-you-go data usage",
+                "kpi": "Total_Data_usage",
+            },
+            "raw_response": {"output": {"matches": [], "unmatched": []}},
+        }
+
+        with patch.object(api_client, "resolve_condition_from_api", return_value=bad_hit):
+            with patch.object(
+                api_client,
+                "reformulate_kpi_text",
+                return_value="free data revenue",
+            ):
+                result = api_client.resolve_kpi_from_api("free data revenue")
+
+        self.assertFalse(result["matched"])
+        self.assertIn("dropped required KPI qualifier", result["attempt_log"][0]["reason"])
+
 
 if __name__ == "__main__":
     unittest.main()

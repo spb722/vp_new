@@ -7,7 +7,7 @@ from config import (
     DECOMPOSITION_LLM_PROVIDER,
     DECOMPOSITION_MODEL,
     decomposition_chat_completion_options,
-    decomposition_client,
+    get_decomposition_client,
 )
 
 CLAUSE_SCHEMA = {
@@ -476,6 +476,7 @@ def select_decomposition_system_prompt(provider: str | None) -> str:
 
 
 SYSTEM_PROMPT = select_decomposition_system_prompt(DECOMPOSITION_LLM_PROVIDER)
+decomposition_client = None
 
 
 class DecompositionError(ValueError):
@@ -530,7 +531,8 @@ def _decomposition_response_format() -> dict:
 
 
 def _create_decomposition(messages: list[dict]) -> str:
-    response = decomposition_client.chat.completions.create(
+    active_client = decomposition_client or get_decomposition_client()
+    response = active_client.chat.completions.create(
         model=DECOMPOSITION_MODEL,
         temperature=0,
         **decomposition_chat_completion_options(),

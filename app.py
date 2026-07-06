@@ -4,6 +4,7 @@ import importlib
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+import config
 import graph
 import pipeline
 from reinforcer import DuplicateSeedError
@@ -13,6 +14,11 @@ from vp_logging import print_vp_resolve_log
 importlib.reload(graph)
 
 app = FastAPI(title="VP Resolver API")
+
+
+@app.on_event("startup")
+def validate_startup_config():
+    config.validate_runtime_config()
 
 
 class ResolveRequest(BaseModel):
@@ -63,6 +69,9 @@ def resolve(req: ResolveRequest):
         "selected_seed_id": result.get("selected_seed_id"),
         "top_candidates": top_candidates,
         "trajectory": result.get("trajectory", []),
+        "decomposition_verified": result.get("decomposition_verified"),
+        "decomposition_attempts": result.get("decomposition_attempt", 0),
+        "decomposition_attempt_log": result.get("decomposition_attempt_log", []),
     }
 
 

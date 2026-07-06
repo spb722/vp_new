@@ -3,7 +3,7 @@ from json import JSONDecodeError
 
 from langsmith import traceable
 
-from config import MODEL, chat_completion_options, client
+from config import MODEL, chat_completion_options, get_client
 
 
 MONTH_WINDOW_SCHEMA = {
@@ -182,7 +182,7 @@ def classify_month_window(original_input: str, decomposition: dict | None = None
     }
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             temperature=0,
             **chat_completion_options(),

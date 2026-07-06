@@ -46,13 +46,18 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 
-from config import DECOMPOSITION_LLM_PROVIDER, DECOMPOSITION_MODEL
+from config import (
+    DECOMPOSITION_LLM_PROVIDER,
+    DECOMPOSITION_MODEL,
+    VP_VERIFY_INCLUDE_TIME_IN_KPI,
+)
 from decomposer import (
     DecompositionError,
     decompose_vp_input,
     _parse_or_repair_decomposition,
     SYSTEM_PROMPT,
 )
+from decomposition_verifier import verify_decomposition
 from features import build_seed_features
 from seeds import load_seeds
 from selector import select_seed_candidates_strict, choose_seed_or_report_ambiguity
@@ -64,6 +69,7 @@ from renderer import render_seed_template, render_filters
 _seeds = load_seeds()
 
 MAX_RETRIES = 2
+MAX_DECOMPOSITION_ATTEMPTS = 3
 
 
 # ── State definition ───────────────────────────────────────────────────────
@@ -95,6 +101,11 @@ class VPState(TypedDict):
     # Node 5: validate_output
     validation_result: Optional[dict]
     parse_ok: Optional[bool]
+    decomposition_verified: Optional[bool]
+    decomposition_attempt: int
+    decomposition_judges: Optional[list]
+    decomposition_feedback: Optional[str]
+    decomposition_attempt_log: Optional[list]
 
     # Feedback loop
     retry_count: int               # how many retries have happened so far
@@ -115,15 +126,8 @@ class VPState(TypedDict):
 )
 def _decompose_with_retry(user_input: str, last_error: str) -> dict:
     """
-    Same as decompose_vp_input but sends the previous error back to the LLM
+    Same as decompose_vp_input but sends targeted feedback back to the LLM
     as a correction message so it can fix the bad decomposition.
-
-    Uses a multi-turn conversation:
-      system: SYSTEM_PROMPT
-      user:   original input
-      user:   "Your previous output caused this error: <last_error>.
-               Please fix the count_constraint values to include
-               both the counted item AND the number."
     """
     return _parse_or_repair_decomposition(
         messages=[
@@ -134,11 +138,8 @@ def _decompose_with_retry(user_input: str, last_error: str) -> dict:
                 "content": (
                     f"Your previous decomposition caused this error downstream: "
                     f"{last_error}. "
-                    f"For count_constraint clauses, the 'values' array MUST contain "
-                    f"BOTH the item being counted AND the number. "
-                    f"Example: 'recharge count greater than 5' → "
-                    f"values: ['recharge count', '5']. "
-                    f"Please re-decompose the original input and fix this."
+                    f"Please re-decompose the original input and fix only the "
+                    f"fields named in the feedback while preserving correct fields."
                 ),
             },
         ],
@@ -158,10 +159,15 @@ def parse_request(state: VPState) -> dict:
     state so the pipeline runs fresh.
     """
     last_error = state.get("last_error")
+    decomposition_feedback = state.get("decomposition_feedback")
     retry_count = state.get("retry_count", 0)
+    decomposition_attempt = state.get("decomposition_attempt", 0) + 1
 
     try:
-        if last_error:
+        if decomposition_feedback:
+            decomp = _decompose_with_retry(state["user_input"], decomposition_feedback)
+            label = f"parse_request(decomposition_retry={decomposition_attempt})"
+        elif last_error:
             retry_count += 1
             decomp = _decompose_with_retry(state["user_input"], last_error)
             label = f"parse_request(retry={retry_count})"
@@ -183,6 +189,9 @@ def parse_request(state: VPState) -> dict:
         "decomposition": decomp,
         "features": features,
         "parse_ok": True,
+        "decomposition_verified": None,
+        "decomposition_attempt": decomposition_attempt,
+        "decomposition_feedback": None,
         "retry_count": retry_count,
         "render_failed": False,
 
@@ -200,6 +209,48 @@ def parse_request(state: VPState) -> dict:
         "error": None,
 
         "trajectory": state.get("trajectory", []) + [label],
+    }
+
+
+# ── Node 1b: verify_decomposition ─────────────────────────────────────────
+
+def verify_decomposition_node(state: VPState) -> dict:
+    result = verify_decomposition(
+        original_input=state["user_input"],
+        decomposition=state["decomposition"],
+    )
+    trajectory_label = (
+        "verify_decomposition"
+        if result["verified"]
+        else "verify_decomposition:failed"
+    )
+
+    error = None
+    if (
+        not result["verified"]
+        and state.get("decomposition_attempt", 1) >= MAX_DECOMPOSITION_ATTEMPTS
+    ):
+        error = (
+            f"Decomposition verification failed after "
+            f"{MAX_DECOMPOSITION_ATTEMPTS} attempts. "
+            f"Feedback: {result['feedback']}"
+        )
+
+    attempt_log = list(state.get("decomposition_attempt_log") or [])
+    attempt_log.append({
+        "attempt": state.get("decomposition_attempt", 1),
+        "verified": result["verified"],
+        "judge_results": result["judge_results"],
+        "feedback": result["feedback"],
+    })
+
+    return {
+        "decomposition_verified": result["verified"],
+        "decomposition_judges": result["judge_results"],
+        "decomposition_feedback": result["feedback"],
+        "decomposition_attempt_log": attempt_log,
+        "error": error,
+        "trajectory": state.get("trajectory", []) + [trajectory_label],
     }
 
 
@@ -261,12 +312,74 @@ def _format_kpi_not_matched_error(kpi_text: str, kpi_mapping: dict | None) -> st
     return error
 
 
+def _time_unit_label(time_unit: str | None, time_n) -> str | None:
+    if not time_unit:
+        return None
+
+    unit = str(time_unit).strip().lower()
+    if unit.endswith("s"):
+        singular = unit[:-1]
+    else:
+        singular = unit
+
+    return singular if str(time_n) == "1" else unit
+
+
+def _kpi_text_already_has_time(kpi_text: str | None) -> bool:
+    if not kpi_text:
+        return False
+
+    return re.search(
+        r"\b("
+        r"last|past|previous|current|completed|"
+        r"mtd|month\s+till\s+date|"
+        r"\d+\s+(?:days?|weeks?|months?|hours?)|"
+        r"days?|weeks?|months?|hours?"
+        r")\b",
+        kpi_text,
+        flags=re.IGNORECASE,
+    ) is not None
+
+
+def build_kpi_lookup_text(features: dict) -> str | None:
+    kpi_text = features.get("kpi_text")
+    if not VP_VERIFY_INCLUDE_TIME_IN_KPI or not kpi_text:
+        return kpi_text
+
+    if _kpi_text_already_has_time(kpi_text):
+        return kpi_text
+
+    time_unit = features.get("time_unit")
+    time_n = features.get("time_n")
+    time_bound_style = features.get("time_bound_style")
+    month_window_style = features.get("month_window_style")
+
+    if time_bound_style == "lmtd" or month_window_style == "lmtd":
+        return f"{kpi_text} month till date"
+
+    if time_unit is None or time_n is None:
+        return kpi_text
+
+    unit = _time_unit_label(time_unit, time_n)
+    if not unit:
+        return kpi_text
+
+    if features.get("is_completed_period"):
+        return f"{kpi_text} last {time_n} completed {unit}"
+
+    if time_bound_style == "current_or_previous":
+        return f"{kpi_text} current or previous {unit}"
+
+    return f"{kpi_text} last {time_n} {unit}"
+
+
 def resolve_columns(state: VPState) -> dict:
     """
     Call the VP_verify API to resolve the main KPI column and all filter
     columns. This is the only node that makes external API calls.
     """
     features = state["features"]
+    kpi_lookup_text = features.get("kpi_text")
 
     try:
         if features.get("filtered_count") or features.get("dynamic_filter_fixed_count"):
@@ -280,14 +393,18 @@ def resolve_columns(state: VPState) -> dict:
                 "raw_response": None,
             }
         else:
-            kpi_mapping = resolve_kpi_from_api(features["kpi_text"])
+            kpi_lookup_text = build_kpi_lookup_text(features)
+            kpi_mapping = resolve_kpi_from_api(kpi_lookup_text)
     except Exception as exc:
         kpi_text = (features or {}).get("kpi_text")
         return {
             "kpi_mapping": None,
             "filter_conditions": [],
             "columns_ok": False,
-            "columns_error": f"KPI resolution failed for kpi_text={kpi_text!r}: {exc}",
+            "columns_error": (
+                f"KPI resolution failed for kpi_text={kpi_text!r} "
+                f"lookup_text={kpi_lookup_text!r}: {exc}"
+            ),
             "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_exception"],
         }
 
@@ -297,7 +414,7 @@ def resolve_columns(state: VPState) -> dict:
             "filter_conditions": [],
             "columns_ok": False,
             "columns_error": _format_kpi_not_matched_error(
-                features["kpi_text"],
+                kpi_lookup_text,
                 kpi_mapping,
             ),
             "trajectory": state.get("trajectory", []) + ["resolve_columns:kpi_failed"],
@@ -477,7 +594,15 @@ def route_after_seed(state: VPState) -> str:
 
 
 def route_after_parse(state: VPState) -> str:
-    return "select_seed" if state.get("parse_ok") else "stop_failure"
+    return "verify_decomposition" if state.get("parse_ok") else "stop_failure"
+
+
+def route_after_decomposition_verification(state: VPState) -> str:
+    if state.get("decomposition_verified"):
+        return "select_seed"
+    if state.get("decomposition_attempt", 1) < MAX_DECOMPOSITION_ATTEMPTS:
+        return "parse_request"
+    return "stop_failure"
 
 
 def route_after_columns(state: VPState) -> str:
@@ -509,6 +634,7 @@ def build_vp_graph(checkpointer=None):
 
     # Nodes
     builder.add_node("parse_request",    parse_request)
+    builder.add_node("verify_decomposition", verify_decomposition_node)
     builder.add_node("select_seed",      select_seed)
     builder.add_node("resolve_columns",  resolve_columns)
     builder.add_node("render_condition", render_condition)
@@ -525,7 +651,17 @@ def build_vp_graph(checkpointer=None):
     builder.add_conditional_edges(
         "parse_request", route_after_parse,
         {
+            "verify_decomposition": "verify_decomposition",
+            "stop_failure": "stop_failure",
+        },
+    )
+
+    builder.add_conditional_edges(
+        "verify_decomposition",
+        route_after_decomposition_verification,
+        {
             "select_seed": "select_seed",
+            "parse_request": "parse_request",
             "stop_failure": "stop_failure",
         },
     )
@@ -603,6 +739,11 @@ def run_vp_graph(
         "final_parent_condition":  None,
         "validation_result":       None,
         "parse_ok":                None,
+        "decomposition_verified":  None,
+        "decomposition_attempt":   0,
+        "decomposition_judges":    None,
+        "decomposition_feedback":  None,
+        "decomposition_attempt_log": [],
         "retry_count":             0,
         "last_error":              None,
         "render_failed":           False,
@@ -632,6 +773,11 @@ def run_vp_graph(
         "retry_count":             s.get("retry_count", 0),
 
         "decomposition": s.get("decomposition"),
+        "decomposition_verified": s.get("decomposition_verified"),
+        "decomposition_attempt": s.get("decomposition_attempt", 0),
+        "decomposition_judges": s.get("decomposition_judges"),
+        "decomposition_feedback": s.get("decomposition_feedback"),
+        "decomposition_attempt_log": s.get("decomposition_attempt_log", []),
         "features": {
             "agg_type":             features.get("agg_type"),
             "kpi_text":             features.get("kpi_text"),

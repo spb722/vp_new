@@ -1,0 +1,12 @@
+fastapi
+groq
+jsonschema
+langgraph
+langsmith
+openai
+pydantic
+python-dotenv
+requests
+typing-extensions
+urllib3
+uvicorn
